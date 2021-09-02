@@ -2,20 +2,15 @@ import socket
 import random
 from threading import Thread
 from datetime import datetime
-from colorama import Fore, init, Back
-# import signal
+from colorama import Fore, init
 
 def listen_for_messages():
     while True:
-        message = s.recv(1024).decode()
-        print(message)
-
-# def handler(signum, frame):
-#     res = input("Ctrl-c was pressed. Do you really want to exit? y/n ")
-#     if res == 'y':
-#         exit(1)
-
-# signal.signal(signal.SIGINT, handler)
+        try:
+            message = s.recv(1024).decode()
+            print(message)
+        except Exception as e:
+            break
 
 # init colors
 init()
@@ -69,3 +64,4 @@ while True:
 
 # close the socket
 s.close()
+t.join()

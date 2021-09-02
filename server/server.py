@@ -1,5 +1,9 @@
 import socket
 from threading import Thread
+from colorama import Fore, init, Back
+
+# init colors
+init()
 
 def listen_for_client(cs):
     """
@@ -13,9 +17,12 @@ def listen_for_client(cs):
         except Exception as e:
             # client no longer connected
             # remove it from the set
-            print(f"[!] Error: {e}")
+            print(f"{Fore.RED}[!] Error: {e}{Fore.RESET}")
             client_sockets.remove(cs)
             cs.close()
+            for client_socket in client_sockets:
+                client_socket.send(f"El cliente se ha salido".encode())
+            break
         else:
             # if we received a message, replace the <SEP> 
             # token with ": " for nice printing
@@ -23,6 +30,7 @@ def listen_for_client(cs):
         # iterate over all connected sockets
         for client_socket in client_sockets:
             # and send the message
+            print(msg)
             client_socket.send(msg.encode())
 
 # server's IP address
