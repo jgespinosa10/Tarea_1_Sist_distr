@@ -1,8 +1,17 @@
 # https://www.thepythoncode.com/article/make-a-chat-room-application-in-python
 
+import sys
 import socket
 from threading import Thread
 from colorama import Fore, init, Back
+
+for i, args in enumerate(sys.argv):
+    try: 
+        if (args == "-n"):
+                n_clients = int(sys.argv[i+1])
+                break
+    except Exception as e:
+        n_clients = 1
 
 # init colors
 init()
@@ -50,7 +59,7 @@ s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 # bind the socket to the address we specified
 s.bind((SERVER_HOST, SERVER_PORT))
 # Aquí se inserta el "n" que define la cantidad de personas a conectar  
-s.listen(5)
+s.listen(n_clients)
 print(f"[*] Listening as {SERVER_HOST}:{SERVER_PORT}")
 
 while True:

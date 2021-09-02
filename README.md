@@ -11,4 +11,5 @@ Librerías utilizadas: <br>
   
 La aplicación está basada en una arquitectura Cliente-Servidor, donde no se tiene una Base de Datos que almacene los datos a largo plazo. También para la comunicación privada entre dos personas se utiliza la arquitectura P2P, donde un cliente le pide al servidor que le comunique con el otro cliente para que este último abra un socket y así nuestro primer cliente pueda conectarse a este socket y así hablar directamente con el cliente saltandose así al servidor.
 
+Para ejecutar la aplicación es necesario ejecutar primero el servidor, para esto nos colocamos en el directotio `./server/` y en la terminal colocar el siguiente comando `./server.py -n N` donde N es la cantidad de clientes que se deben conectar para poder mostrar los mensajes (es un argumento opcional), luego abrimos la terminal en el directorio `/client/` y ejecutamos el siguiente comando `./client.py`.
 
