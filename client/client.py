@@ -1,14 +1,18 @@
+# https://www.thepythoncode.com/article/make-a-chat-room-application-in-python
+
 import socket
 import random
 from threading import Thread
 from datetime import datetime
 from colorama import Fore, init
 
+# Función ejecutada en un thread, esta se encarga de escuchar la información del servidor
 def listen_for_messages():
     while True:
         try:
             message = s.recv(1024).decode()
             print(message)
+        # Se ejecuta cuando se sale del chat y cuando el servidor termina antes que el cliente
         except Exception as e:
             break
 
@@ -50,6 +54,8 @@ t.daemon = True
 # start the thread
 t.start()
 
+s.send(f"\t{name} ha entrado a la sala".encode())
+
 while True:
     # input message we want to send to the server
     to_send =  input()
@@ -64,4 +70,3 @@ while True:
 
 # close the socket
 s.close()
-t.join()

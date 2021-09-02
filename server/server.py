@@ -1,3 +1,5 @@
+# https://www.thepythoncode.com/article/make-a-chat-room-application-in-python
+
 import socket
 from threading import Thread
 from colorama import Fore, init, Back
@@ -5,6 +7,7 @@ from colorama import Fore, init, Back
 # init colors
 init()
 
+# Función ejecutada en un thread, esta se encarga de escuchar la información enviada desde el cliente 
 def listen_for_client(cs):
     """
     This function keep listening for a message from `cs` socket
@@ -62,9 +65,3 @@ while True:
     t.daemon = True
     # start the thread
     t.start()
-
-# # close client sockets
-# for cs in client_sockets:
-#     cs.close()
-# # close server socket
-# s.close()
