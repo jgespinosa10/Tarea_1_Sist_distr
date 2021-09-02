@@ -5,6 +5,7 @@ import socket
 from threading import Thread
 from colorama import Fore, init, Back
 
+# Función que recibe los argumentos de la linea de comando
 for i, args in enumerate(sys.argv):
     try: 
         if (args == "-n"):
