@@ -29,7 +29,7 @@ python3 ./main.py
 Se puede utilizar el flag opcional `-n`, que indica cuantas personas deben ingresar al chat antes de que comience. Los chats se acumulan y sólo se pueden ver cuando han ingresado la cantidad de personas indicadas. Funciona de la siguiente manera:
 
 ```bash
-./main.py -n N
+python3 ./main.py -n N
 ```
 
 donde N es la cantidad de clientes que se deben conectar para poder mostrar los mensajes.
@@ -38,5 +38,5 @@ Luego, abrimos la terminal en el directorio del cliente y ejectamos el código d
 
 ```bash
 cd client
-./client.py
+python3 ./main.py
 ```
