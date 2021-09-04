@@ -4,11 +4,15 @@ from colorama import Fore, init
 from collections import deque
 
 class Server:
-    def __init__(self, n_clients,SERVER_HOST, SERVER_PORT, separator_token):
+    def __init__(self, n_clients, n_arg, SERVER_HOST, SERVER_PORT, separator_token):
         # init variables
         self.SERVER_HOST = SERVER_HOST
         self.SERVER_PORT = SERVER_PORT
         self.separator_token = separator_token
+        # n_arg = true if -n present in args
+        self.n_arg = n_arg
+        self.number_clients = 0
+        self.required_clients = n_clients
         self.msg_queue = deque()
         # init colors
         init()
@@ -33,6 +37,8 @@ class Server:
             # we keep listening for new connections all the time
             client_socket, client_address = self.s.accept()
             print(f"[+] {client_address} connected.")
+            # clients connected + 1
+            self.number_clients += 1
             # add the new connected client to connected sockets
             self.client_sockets.add(client_socket)
             # start a new thread that listens for each client's messages
@@ -72,8 +78,9 @@ class Server:
     def send_messages(self):
         while True:
             # if queue has msgs, remove first msg in queue and send it to all clients
-            if len(self.msg_queue) != 0:
+            if len(self.msg_queue) != 0 and (not self.n_arg or self.number_clients >= self.required_clients): # if -n, then the number of clients connected should be >= n to send msgs
                 msg = self.msg_queue.popleft()
+                msg += '\n'
                 print(msg)
                 for client_socket in self.client_sockets:
                     client_socket.send(msg.encode())
