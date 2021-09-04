@@ -1,6 +1,7 @@
 import socket
 from threading import Thread
 from colorama import Fore, init
+from collections import deque
 
 class Server:
     def __init__(self, n_clients,SERVER_HOST, SERVER_PORT, separator_token):
@@ -8,6 +9,7 @@ class Server:
         self.SERVER_HOST = SERVER_HOST
         self.SERVER_PORT = SERVER_PORT
         self.separator_token = separator_token
+        self.msg_queue = deque()
         # init colors
         init()
         # initialize list/set of all connected client's sockets
@@ -21,6 +23,10 @@ class Server:
         # Aquí se inserta el "n" que define la cantidad de personas a conectar  
         self.s.listen(n_clients)
         print(f"[*] Listening as {SERVER_HOST}:{SERVER_PORT}")
+        # Add thread to check message queue and send messages to all clients
+        queue_thread = Thread(target=self.send_messages)
+        queue_thread.daemon = True
+        queue_thread.start()
 
     def run(self):
         while True:
@@ -59,8 +65,15 @@ class Server:
                 # if we received a message, replace the <SEP> 
                 # token with ": " for nice printing
                 msg = msg.replace(self.separator_token, ": ")
-            # iterate over all connected sockets
-            for client_socket in self.client_sockets:
-                # and send the message
+
+            self.msg_queue.append(msg)
+
+
+    def send_messages(self):
+        while True:
+            # if queue has msgs, remove first msg in queue and send it to all clients
+            if len(self.msg_queue) != 0:
+                msg = self.msg_queue.popleft()
                 print(msg)
-                client_socket.send(msg.encode())
+                for client_socket in self.client_sockets:
+                    client_socket.send(msg.encode())
