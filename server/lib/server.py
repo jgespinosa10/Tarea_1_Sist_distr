@@ -11,6 +11,7 @@ class Server:
         self.separator_token = separator_token
         # n_arg = true if -n present in args
         self.n_arg = n_arg
+        self.enough_clients = not n_arg
         self.number_clients = 0
         self.required_clients = n_clients
         self.msg_queue = deque()
@@ -39,6 +40,8 @@ class Server:
             print(f"[+] {client_address} connected.")
             # clients connected + 1
             self.number_clients += 1
+            if self.n_arg and self.number_clients >= self.required_clients:
+                self.enough_clients = True
             # add the new connected client to connected sockets
             self.client_sockets.add(client_socket)
             # start a new thread that listens for each client's messages
@@ -78,9 +81,9 @@ class Server:
     def send_messages(self):
         while True:
             # if queue has msgs, remove first msg in queue and send it to all clients
-            if len(self.msg_queue) != 0 and (not self.n_arg or self.number_clients >= self.required_clients): # if -n, then the number of clients connected should be >= n to send msgs
+            if len(self.msg_queue) != 0 and self.enough_clients:
                 msg = self.msg_queue.popleft()
                 msg += '\n'
-                print(msg)
+                print(msg, end="")
                 for client_socket in self.client_sockets:
                     client_socket.send(msg.encode())
