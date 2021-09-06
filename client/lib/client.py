@@ -45,7 +45,7 @@ class Client:
         while True:
             try:
                 message = self.s.recv(1024).decode()
-                print(message)
+                print(message, end="")
             # Se ejecuta cuando se sale del chat y cuando el servidor termina antes que el cliente
             except Exception:
                 break

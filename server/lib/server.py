@@ -1,13 +1,20 @@
 import socket
 from threading import Thread
 from colorama import Fore, init
+from collections import deque
 
 class Server:
-    def __init__(self, n_clients,SERVER_HOST, SERVER_PORT, separator_token):
+    def __init__(self, n_clients, n_arg, SERVER_HOST, SERVER_PORT, separator_token):
         # init variables
         self.SERVER_HOST = SERVER_HOST
         self.SERVER_PORT = SERVER_PORT
         self.separator_token = separator_token
+        # n_arg = true if -n present in args
+        self.n_arg = n_arg
+        self.enough_clients = not n_arg
+        self.number_clients = 0
+        self.required_clients = n_clients
+        self.msg_queue = deque()
         # init colors
         init()
         # initialize list/set of all connected client's sockets
@@ -21,12 +28,20 @@ class Server:
         # Aquí se inserta el "n" que define la cantidad de personas a conectar  
         self.s.listen(n_clients)
         print(f"[*] Listening as {SERVER_HOST}:{SERVER_PORT}")
+        # Add thread to check message queue and send messages to all clients
+        queue_thread = Thread(target=self.send_messages)
+        queue_thread.daemon = True
+        queue_thread.start()
 
     def run(self):
         while True:
             # we keep listening for new connections all the time
             client_socket, client_address = self.s.accept()
             print(f"[+] {client_address} connected.")
+            # clients connected + 1
+            self.number_clients += 1
+            if self.n_arg and self.number_clients >= self.required_clients:
+                self.enough_clients = True
             # add the new connected client to connected sockets
             self.client_sockets.add(client_socket)
             # start a new thread that listens for each client's messages
@@ -59,8 +74,16 @@ class Server:
                 # if we received a message, replace the <SEP> 
                 # token with ": " for nice printing
                 msg = msg.replace(self.separator_token, ": ")
-            # iterate over all connected sockets
-            for client_socket in self.client_sockets:
-                # and send the message
-                print(msg)
-                client_socket.send(msg.encode())
+
+            self.msg_queue.append(msg)
+
+
+    def send_messages(self):
+        while True:
+            # if queue has msgs, remove first msg in queue and send it to all clients
+            if len(self.msg_queue) != 0 and self.enough_clients:
+                msg = self.msg_queue.popleft()
+                msg += '\n'
+                print(msg, end="")
+                for client_socket in self.client_sockets:
+                    client_socket.send(msg.encode())
