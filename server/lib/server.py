@@ -79,11 +79,15 @@ class Server:
 
 
     def send_messages(self):
-        while True:
-            # if queue has msgs, remove first msg in queue and send it to all clients
-            if len(self.msg_queue) != 0 and self.enough_clients:
-                msg = self.msg_queue.popleft()
-                msg += '\n'
-                print(msg, end="")
-                for client_socket in self.client_sockets:
-                    client_socket.send(msg.encode())
+            while True:
+                    # if queue has msgs, remove first msg in queue and send it to all clients
+                    if len(self.msg_queue) != 0 and self.enough_clients:
+                        msg = self.msg_queue.popleft()
+                        msg += '\n'
+                        print(msg, end="")
+                        for client_socket in self.client_sockets:
+                            try: 
+                                client_socket.send(msg.encode())
+                            except ConnectionAbortedError as e:
+                                break
+
