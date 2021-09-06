@@ -9,7 +9,8 @@ Librerías utilizadas:
   `random`: Generar elementos random dentro de la app.  
   `threading`: Para poder paralelizar la ejecución tanto del servidor como del cliente.  
   `signal`: Para poder manejar las interrupciones por teclado y evitar que se caiga la app.  
-  `sys`: Para obtener los parametros entregados en la linea de comando.
+  `sys`: Para obtener los parametros entregados en la linea de comando.  
+  `collection`: Sacamos la implementación de *stack* para tener todos los mensajes.
 
 Para instalar las librerías, puedes correr el comando en esta carpeta:
 

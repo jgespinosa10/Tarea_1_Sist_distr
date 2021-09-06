@@ -86,4 +86,8 @@ class Server:
                 msg += '\n'
                 print(msg, end="")
                 for client_socket in self.client_sockets:
-                    client_socket.send(msg.encode())
+                    try: 
+                        client_socket.send(msg.encode())
+                    except ConnectionAbortedError:
+                        break
+
