@@ -1,8 +1,11 @@
 import random
 import socket
+import traceback
 from colorama import init, Fore
 from datetime import datetime
 from threading import Thread
+
+from lib.BTPeerConnection import BTPeerConnection
 
 class Client:
     def __init__(self, SERVER_HOST, SERVER_PORT, separator_token):
@@ -22,10 +25,10 @@ class Client:
         self.client_color = random.choice(colors)
 
         # initialize TCP socket
-        self.s = socket.socket()
+        self.cs = socket.socket()
         print(f"[*] Connecting to {self.SERVER_HOST}:{self.SERVER_PORT}...")
         # connect to the server
-        self.s.connect((self.SERVER_HOST, self.SERVER_PORT))
+        self.cs.connect((self.SERVER_HOST, self.SERVER_PORT))
         print("[+] Connected.")
 
         # prompt the client for a name
@@ -38,13 +41,17 @@ class Client:
         # start the thread
         t.start()
         
-        self.s.send(f"\t{self.name} ha entrado a la sala".encode())
+        self.cs.send(f"\t{self.name} ha entrado a la sala".encode())
 
-    # Función ejecutada en un thread, esta se encarga de escuchar la información del servidor
+        ### Peer 2 Peer connection
+        
+
+    ## Functions for client-server main chat
+    # Function excuted in thread, listen information from server
     def listen_for_messages(self):
         while True:
             try:
-                message = self.s.recv(1024).decode()
+                message = self.cs.recv(1024).decode()
                 print(message, end="")
             # Se ejecuta cuando se sale del chat y cuando el servidor termina antes que el cliente
             except Exception:
@@ -61,7 +68,88 @@ class Client:
             date_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 
             to_send = f"{self.client_color}[{date_now}] {self.name}{self.separator_token}{to_send}{Fore.RESET}"
             # finally, send the message
-            self.s.send(to_send.encode())
+            self.cs.send(to_send.encode())
 
         # close the socket
-        self.s.close()
+        self.cs.close()
+
+    
+    ## Funtions for peer 2 peer
+    # Creates a socket for the client to listen to another clients
+    def makeserversocket( self, backlog=5 ):
+        """ Constructs and prepares a server socket listening on the given 
+        port.
+        """
+        s = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
+        s.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
+        s.bind( ( '', 0 ) )
+        s.listen( backlog )
+        return s
+
+    
+    def __handlepeer( self, clientsock ):
+
+        host, port = clientsock.getpeername()
+        peerconn = BTPeerConnection( None, host, port, clientsock, debug=False )
+        
+        try:
+            msgtype, msgdata = peerconn.recvdata()
+            if msgtype: msgtype = msgtype.upper()
+            if msgtype in self.handlers:
+                self.handlers[ msgtype ]( peerconn, msgdata )
+        except KeyboardInterrupt:
+            raise
+        except:
+            traceback.print_exc()
+        
+        self.__debug( 'Disconnecting ' + str(clientsock.getpeername()) )
+        peerconn.close()
+
+        # end handlepeer method
+
+    
+    def peer2peer_loop( self ):
+        s = self.makeserversocket()
+        s.settimeout(2)
+
+        while not self.shutdown:
+            try:
+                clientsock, clientaddr = s.accept()
+                clientsock.settimeout(None)
+
+                t = Thread( target = self.__handlepeer, args = [ clientsock ] )
+                t.start()
+            except KeyboardInterrupt:
+                self.shutdown = True
+                continue
+            except:
+                traceback.print_exc()
+                continue
+        s.close()
+
+        def sendtopeer( self, peerid, msgtype, msgdata, waitreply=True ):
+	        if self.router:
+	            nextpid, host, port = self.router( peerid )
+	        if not self.router or not nextpid:
+	            return None
+	        return self.connectandsend( host, port, msgtype, msgdata, pid=nextpid, waitreply=waitreply )
+
+        
+    def connectandsend( self, host, port, msgtype, msgdata, pid=None, waitreply=True ):
+        msgreply = []   # list of replies
+        try:
+            peerconn = BTPeerConnection( pid, host, port)
+            peerconn.senddata( msgtype, msgdata )
+            
+            if waitreply:
+                onereply = peerconn.recvdata()
+                while (onereply != (None,None)):
+                    msgreply.append( onereply )
+                    onereply = peerconn.recvdata()
+            peerconn.close()
+        except KeyboardInterrupt:
+            raise
+        except:
+            traceback.print_exc()
+        
+        return msgreply

@@ -25,8 +25,8 @@ class Server:
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         # bind the socket to the address we specified
         self.s.bind((SERVER_HOST, SERVER_PORT))
-        # Aquí se inserta el "n" que define la cantidad de personas a conectar  
-        self.s.listen(n_clients)
+        # Aquí se inserta el "n" que define la cantidad de personas a conectar
+        self.s.listen()
         print(f"[*] Listening as {SERVER_HOST}:{SERVER_PORT}")
         # Add thread to check message queue and send messages to all clients
         queue_thread = Thread(target=self.send_messages)
