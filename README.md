@@ -21,7 +21,7 @@ pip install -r requirements.txt
 
 Además, es necesario setear el token de autorización de `ngrok`. En `https://ngrok.com/` se puede crear una cuenta gratuita y el token de autorización se encuentra en `https://dashboard.ngrok.com/get-started/your-authtoken`. Con el token, ahora se debe crear el archivo `server/lib/token.py`, e insertar la variable ```NGROK_TOKEN``` con el valor del token, de la forma:
 
-``` python 
+``` python
 # server/lib/token.py
 NGROK_TOKEN = "<your-token>"
 ```

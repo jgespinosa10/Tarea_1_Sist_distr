@@ -8,7 +8,7 @@ from colorama import init, Fore
 from datetime import datetime
 from threading import Thread
 
-from lib.BTPeerConnection import BTPeerConnection
+from lib.helpers import makeserversocket
 
 class Client:
     def __init__(self, SERVER_HOST, SERVER_PORT, separator_token):
@@ -27,6 +27,18 @@ class Client:
         # choose a random color for the client
         self.client_color = random.choice(colors)
 
+        ## Prepare client for p2p connection
+        self.ss = makeserversocket()
+        self.client_hostname = self.ss.gethostname()
+        self.client_port = self.ss.getsockname()[1]
+        # make a thread that listens for messages to this client & print them
+        t = Thread(target=self.listen_for_clients)
+        # make the thread daemon so it ends whenever the main thread ends
+        t.daemon = True
+        # start the thread
+        t.start()
+
+        # Connect to server and send information
         # initialize TCP socket
         self.cs = socket.socket()
         print(f"[*] Connecting to {self.SERVER_HOST}:{self.SERVER_PORT}...")
@@ -63,9 +75,6 @@ class Client:
         # start the thread
         t.start()
 
-        ### Peer 2 Peer connection
-        
-
     ## Functions for client-server main chat
     # Function excuted in thread, listen information from server
     def listen_for_messages(self):
@@ -84,6 +93,18 @@ class Client:
             # Se ejecuta cuando se sale del chat y cuando el servidor termina antes que el cliente
             except Exception:
                 break
+    
+    def process_message(self, msg):
+        msg = msg.split(":")
+        id = msg[0]
+        msg = ":".join(msg[1:])
+        return id, msg
+
+    def print_users(self):
+        text= ""
+        for user in self.users.items():
+            text += f" {user[0]}. - {user[1]}\n"
+        return text
 
     def run(self):
         while True:
@@ -95,16 +116,14 @@ class Client:
                 self.print_users(),
                 "Escribe de la siguiente forma: {id}: {mensaje}\n"
             ]))
-            msg = msg.split(":")
-            id = msg[0]
-            msg = ":".join(msg[1:])
             # a way to exit the program
+            id, msg = self.process_message(msg)
             if id == '-1':
                 break
             elif id == '0':
                 # add the datetime, name & the color of the sender
                 date_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 
-                to_send = f"{self.client_color}[{date_now}] {self.name}{self.separator_token}{msg}{Fore.RESET}"
+                to_send = f"0-{self.client_color}[{date_now}] {self.name}{self.separator_token}{msg}{Fore.RESET}"
                 # finally, send the message
                 self.cs.send(to_send.encode())
             elif id.isnumeric() and id in self.users:
@@ -116,23 +135,11 @@ class Client:
         # close the socket
         self.cs.close()
 
-    def print_users(self):
-        text= ""
-        for user in self.users.items():
-            text += f" {user[0]}. - {user[1]}\n"
-        return text
     
     ## Funtions for peer 2 peer
     # Creates a socket for the client to listen to another clients
-    def makeserversocket( self, backlog=5 ):
-        """ Constructs and prepares a server socket listening on the given 
-        port.
-        """
-        s = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
-        s.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
-        s.bind( ( '', 0 ) )
-        s.listen( backlog )
-        return s
+    def listen_to_clients(self):
+
 
     
     def __handlepeer( self, clientsock ):
