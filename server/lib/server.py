@@ -78,6 +78,12 @@ class Server:
             msg = msg.replace(self.separator_token, ": ")
         return msg
 
+    def process_message(self, msg):
+        msg = msg.split(":")
+        id = msg[0]
+        msg = ":".join(msg[1:])
+        return id, msg
+
     # Función ejecutada en un thread, esta se encarga de escuchar la información enviada desde el cliente 
     def listen_for_client(self, user):
         """
@@ -85,7 +91,7 @@ class Server:
         Whenever a message is received, broadcast it to all other connected clients
         """
         msg = self.listen(user)
-        if msg == "disconnected":
+        if msg == "-1":
             return
         user.ip = msg
         print(f"[+] {user.ip} connected.")
@@ -95,9 +101,13 @@ class Server:
         self.send_users(user)
         while True:
             msg = self.listen(user)
-            if msg == "disconnected":
+            id, msg = self.process_message(msg)
+            if id == "-1":
                 break
-            self.msg_queue.append(msg)
+            elif id == "0":
+                self.msg_queue.append(msg)
+            elif id == "2":
+                pass
 
     def send_users(self, user):
         for client in self.client_sockets:
