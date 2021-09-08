@@ -1,7 +1,10 @@
 import socket
-from threading import Thread
-from colorama import Fore, init
 from collections import deque
+from colorama import Fore, init
+from threading import Thread
+
+from lib.user import User
+
 
 class Server:
     def __init__(self, n_clients, n_arg, SERVER_HOST, SERVER_PORT, separator_token):
@@ -15,6 +18,7 @@ class Server:
         self.number_clients = 0
         self.required_clients = n_clients
         self.msg_queue = deque()
+        self.user_id = 1
         # init colors
         init()
         # initialize list/set of all connected client's sockets
@@ -33,6 +37,7 @@ class Server:
         queue_thread.daemon = True
         queue_thread.start()
 
+
     def run(self):
         while True:
             # we keep listening for new connections all the time
@@ -42,41 +47,69 @@ class Server:
             self.number_clients += 1
             if self.n_arg and self.number_clients >= self.required_clients:
                 self.enough_clients = True
+            # create user object
+            user = User(self.user_id, client_socket, None)
             # add the new connected client to connected sockets
-            self.client_sockets.add(client_socket)
+            self.client_sockets.add(user)
             # start a new thread that listens for each client's messages
-            t = Thread(target=self.listen_for_client, args=(client_socket,))
+            t = Thread(target=self.listen_for_client, args=(user,))
             # make the thread daemon so it ends whenever the main thread ends
             t.daemon = True
             # start the thread
             t.start()
+            # Count id's
+            self.user_id += 1
+
+    def listen(self, user):
+        try:
+            # keep listening for a message from `cs` socket
+            msg = user.cs.recv(1024).decode()
+        except Exception as e:
+            # client no longer connected
+            # remove it from the set
+            print(f"{Fore.RED}[!] Error: {e}{Fore.RESET}")
+            self.client_sockets.remove(user)
+            user.cs.close()
+            for client in self.client_sockets:
+                client.cs.send(f"0-El cliente {client.id} {client.name} se ha salido".encode())
+            return "disconnected"
+        else:
+            # if we received a message, replace the <SEP> 
+            # token with ": " for nice printing
+            msg = msg.replace(self.separator_token, ": ")
+        return msg
 
     # Función ejecutada en un thread, esta se encarga de escuchar la información enviada desde el cliente 
-    def listen_for_client(self, cs):
+    def listen_for_client(self, user):
         """
         This function keep listening for a message from `cs` socket
         Whenever a message is received, broadcast it to all other connected clients
         """
+        msg = self.listen(user)
+        if msg == "disconnected":
+            return
+        user.name = msg
+        self.send_users(user)
         while True:
-            try:
-                # keep listening for a message from `cs` socket
-                msg = cs.recv(1024).decode()
-            except Exception as e:
-                # client no longer connected
-                # remove it from the set
-                print(f"{Fore.RED}[!] Error: {e}{Fore.RESET}")
-                self.client_sockets.remove(cs)
-                cs.close()
-                for client_socket in self.client_sockets:
-                    client_socket.send(f"El cliente se ha salido".encode())
+            msg = self.listen(user)
+            if msg == "disconnected":
                 break
-            else:
-                # if we received a message, replace the <SEP> 
-                # token with ": " for nice printing
-                msg = msg.replace(self.separator_token, ": ")
-
             self.msg_queue.append(msg)
 
+    def send_users(self, user):
+        for client in self.client_sockets:
+            if client != user:
+                try: 
+                    client.cs.send(f"1-{user.id};{user.name}".encode())
+                    client.cs.send(f"0-¡{user.name} ha entrado a la sala!\n".encode())
+                except ConnectionAbortedError:
+                    break
+        users = "-"
+        for client in self.client_sockets:
+            if client != user and client.name:
+                users += f"{client.id},{client.name};"
+        users = users.rstrip(";")
+        user.cs.send(users.encode())
 
     def send_messages(self):
         while True:
@@ -85,9 +118,8 @@ class Server:
                 msg = self.msg_queue.popleft()
                 msg += '\n'
                 print(msg, end="")
-                for client_socket in self.client_sockets:
+                for user in self.client_sockets:
                     try: 
-                        client_socket.send(msg.encode())
+                        user.cs.send(("0-" + msg).encode())
                     except ConnectionAbortedError:
                         break
-

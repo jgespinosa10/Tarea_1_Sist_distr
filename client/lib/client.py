@@ -1,3 +1,6 @@
+# Client-Server from # https://www.thepythoncode.com/article/make-a-chat-room-application-in-python
+# Peer to peer from http://cs.berry.edu/~nhamid/p2p/framework-python.html
+
 import random
 import socket
 import traceback
@@ -34,14 +37,24 @@ class Client:
         # prompt the client for a name
         self.name = input("Enter your name: ")
         print(f"{self.client_color}Hola {self.name}, bienvenid@ al chat!{Fore.RESET}")
+        self.cs.send(self.name.encode())
+        #recieve list of id's
+        try:
+            message = self.cs.recv(1024).decode()
+            self.users = [msg.split(",") for msg in message[1:].split(";")]
+            if not self.users[0][0]:
+                self.users = dict()
+            else:
+                self.users = {msg[0]: msg[1] for msg in self.users}
+        except Exception:
+            # Se ejecuta cuando se sale del chat y cuando el servidor termina antes que el cliente
+            return
         # make a thread that listens for messages to this client & print them
         t = Thread(target=self.listen_for_messages)
         # make the thread daemon so it ends whenever the main thread ends
         t.daemon = True
         # start the thread
         t.start()
-        
-        self.cs.send(f"\t{self.name} ha entrado a la sala".encode())
 
         ### Peer 2 Peer connection
         
@@ -52,7 +65,14 @@ class Client:
         while True:
             try:
                 message = self.cs.recv(1024).decode()
-                print(message, end="")
+                msg = message.split("-")
+                id = msg[0]
+                msg = "-".join(msg[1:])
+                if id == "0":
+                    print(msg, end="")
+                elif id == "1":
+                    user = msg.split(";")
+                    self.users[user[0]] = user[1]
             # Se ejecuta cuando se sale del chat y cuando el servidor termina antes que el cliente
             except Exception:
                 break
@@ -60,19 +80,39 @@ class Client:
     def run(self):
         while True:
             # input message we want to send to the server
-            to_send =  input()
+            msg =  input("".join([
+                "Menú:\n",
+                "-1. Salir del chat\n",
+                " 0. Enviar a todos\n",
+                self.print_users(),
+                "Escribe de la siguiente forma: {id}: {mensaje}\n"
+            ]))
+            msg = msg.split(":")
+            id = msg[0]
+            msg = ":".join(msg[1:])
             # a way to exit the program
-            if to_send.lower() == 'q':
+            if id == '-1':
                 break
-            # add the datetime, name & the color of the sender
-            date_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 
-            to_send = f"{self.client_color}[{date_now}] {self.name}{self.separator_token}{to_send}{Fore.RESET}"
-            # finally, send the message
-            self.cs.send(to_send.encode())
+            elif id == '0':
+                # add the datetime, name & the color of the sender
+                date_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 
+                to_send = f"{self.client_color}[{date_now}] {self.name}{self.separator_token}{msg}{Fore.RESET}"
+                # finally, send the message
+                self.cs.send(to_send.encode())
+            elif id.isnumeric() and id in self.users:
+                # stablish p2p connection and send message
+                pass
+            else:
+                print("Elige un id válido")
 
         # close the socket
         self.cs.close()
 
+    def print_users(self):
+        text= ""
+        for user in self.users.items():
+            text += f" {user[0]}. - {user[1]}\n"
+        return text
     
     ## Funtions for peer 2 peer
     # Creates a socket for the client to listen to another clients
@@ -102,7 +142,6 @@ class Client:
         except:
             traceback.print_exc()
         
-        self.__debug( 'Disconnecting ' + str(clientsock.getpeername()) )
         peerconn.close()
 
         # end handlepeer method

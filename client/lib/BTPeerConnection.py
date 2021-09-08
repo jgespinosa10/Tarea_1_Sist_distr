@@ -1,7 +1,7 @@
 import socket
 import struct
 import traceback
-from helpers import btdebug
+from lib.helpers import btdebug
 
 
 class BTPeerConnection:
