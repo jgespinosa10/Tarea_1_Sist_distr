@@ -29,7 +29,7 @@ class Client:
 
         ## Prepare client for p2p connection
         self.ss = makeserversocket()
-        self.client_hostname = self.ss.gethostname()
+        self.client_hostname = socket.gethostbyname(self.ss.gethostname())
         self.client_port = self.ss.getsockname()[1]
         # make a thread that listens for messages to this client & print them
         t = Thread(target=self.listen_for_clients)
