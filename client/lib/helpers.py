@@ -9,3 +9,8 @@ def makeserversocket( self, backlog=5 ) -> socket.socket:
     s.bind( ( '', 0 ) )
     s.listen( backlog )
     return s
+
+def process_ip( str_ip ):
+  ip = str_ip.split("-")
+  ip[1] = int(ip[1])
+  return tuple(ip)

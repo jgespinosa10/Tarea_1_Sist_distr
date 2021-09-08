@@ -8,7 +8,7 @@ from colorama import init, Fore
 from datetime import datetime
 from threading import Thread
 
-from lib.helpers import makeserversocket
+from lib.helpers import makeserversocket, process_ip
 
 class Client:
     def __init__(self, SERVER_HOST, SERVER_PORT, separator_token):
@@ -28,11 +28,10 @@ class Client:
         self.client_color = random.choice(colors)
 
         ## Prepare client for p2p connection
-        self.ss = makeserversocket()
-        self.client_hostname = socket.gethostbyname(self.ss.gethostname())
+        self.ss = makeserversocket(self)
         self.client_port = self.ss.getsockname()[1]
         # make a thread that listens for messages to this client & print them
-        t = Thread(target=self.listen_for_clients)
+        t = Thread(target=self.accept_private_sockets)
         # make the thread daemon so it ends whenever the main thread ends
         t.daemon = True
         # start the thread
@@ -45,9 +44,11 @@ class Client:
         # connect to the server
         self.cs.connect((self.SERVER_HOST, self.SERVER_PORT))
         print("[+] Connected.")
+        self.client_hostname = self.cs.getsockname()[0]
+
 
         # inform the server client's ip address
-        self.cs.send((self.cs.getsockname()[0]).encode())
+        self.cs.send(f"{self.client_hostname}-{self.client_port}".encode())
 
         # prompt the client for a name
         self.name = input("Enter your name: ")
@@ -57,15 +58,20 @@ class Client:
         #recieve list of id's
         try:
             message = self.cs.recv(1024).decode()
+            self.users_sockets ={}
             self.users_ip = {}
             self.users = [msg.split(",") for msg in message[1:].split(";")]
             if not self.users[0][0]:
                 self.users = dict()
-                self.users_id = {}
+                self.users_ip = {}
             else:
+                # We obtain (ip, port) for each user
+                self.users_ip = {msg[0]: process_ip(msg[1]) for msg in self.users}
                 self.users = {msg[0]: msg[2] for msg in self.users}
-                self.users_id = {msg[0]: msg[1] for msg in self.users}
-        except Exception:
+                
+        except Exception as e:
+            print(e)
+
             # Se ejecuta cuando se sale del chat y cuando el servidor termina antes que el cliente
             return
         # make a thread that listens for messages to this client & print them
@@ -81,6 +87,7 @@ class Client:
         while True:
             try:
                 message = self.cs.recv(1024).decode()
+
                 msg = message.split("-")
                 id = msg[0]
                 msg = "-".join(msg[1:])
@@ -89,7 +96,7 @@ class Client:
                 elif id == "1":
                     user = msg.split(";")
                     self.users[user[0]] = user[2]
-                    self.users_id[user[0]] = user[1] 
+                    self.users_ip[user[0]] = process_ip(user[1]) 
             # Se ejecuta cuando se sale del chat y cuando el servidor termina antes que el cliente
             except Exception:
                 break
@@ -101,9 +108,10 @@ class Client:
         return id, msg
 
     def print_users(self):
+        print(self.users)
         text= ""
-        for user in self.users.items():
-            text += f" {user[0]}. - {user[1]}\n"
+        for id, name in self.users.items():
+            text += f" {id}. - {name}\n"
         return text
 
     def run(self):
@@ -128,7 +136,17 @@ class Client:
                 self.cs.send(to_send.encode())
             elif id.isnumeric() and id in self.users:
                 # stablish p2p connection and send message
-                pass
+                if id in self.users_sockets:
+                  # send msg through socket
+                  pass
+                else:
+                  skt = socket.socket()
+                  print("voy a intentar conectarme")
+                  print(self.users_ip)
+                  skt.connect(self.users_ip[id])
+                  self.users_sockets[id] = skt
+
+                  
             else:
                 print("Elige un id válido")
 
@@ -138,7 +156,27 @@ class Client:
     
     ## Funtions for peer 2 peer
     # Creates a socket for the client to listen to another clients
-    def listen_to_clients(self):
+    def listen_to_pm(self):
+      pass
+
+
+    def accept_private_sockets(self):
+      while True:
+            # we keep listening for new connections all the time
+            client_socket, client_address = self.ss.accept()
+
+            print("llegue")
+            # # add the new connected client to connected sockets
+            # self.client_sockets.add(user)
+            # # start a new thread that listens for each client's messages
+            # t = Thread(target=self.listen_to_pm, args=())
+            # # make the thread daemon so it ends whenever the main thread ends
+            # t.daemon = True
+            # # start the thread
+            # t.start()
+            # # Count id's
+            # self.user_id += 1
+
 
 
     
@@ -207,3 +245,4 @@ class Client:
             traceback.print_exc()
         
         return msgreply
+  
