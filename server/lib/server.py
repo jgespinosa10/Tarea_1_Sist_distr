@@ -42,7 +42,6 @@ class Server:
         while True:
             # we keep listening for new connections all the time
             client_socket, client_address = self.s.accept()
-            print(f"[+] {client_address} connected.")
             # clients connected + 1
             self.number_clients += 1
             if self.n_arg and self.number_clients >= self.required_clients:
@@ -88,6 +87,10 @@ class Server:
         msg = self.listen(user)
         if msg == "disconnected":
             return
+        user.ip = msg
+        print(f"[+] {user.ip} connected.")
+
+        msg = self.listen(user)
         user.name = msg
         self.send_users(user)
         while True:
@@ -107,7 +110,7 @@ class Server:
         users = "-"
         for client in self.client_sockets:
             if client != user and client.name:
-                users += f"{client.id},{client.name};"
+                users += f"{client.id},{client.ip},{client.name};"
         users = users.rstrip(";")
         user.cs.send(users.encode())
 

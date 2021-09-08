@@ -34,18 +34,25 @@ class Client:
         self.cs.connect((self.SERVER_HOST, self.SERVER_PORT))
         print("[+] Connected.")
 
+        # inform the server client's ip address
+        self.cs.send((self.cs.getsockname()[0]).encode())
+
         # prompt the client for a name
         self.name = input("Enter your name: ")
         print(f"{self.client_color}Hola {self.name}, bienvenid@ al chat!{Fore.RESET}")
         self.cs.send(self.name.encode())
+
         #recieve list of id's
         try:
             message = self.cs.recv(1024).decode()
+            self.users_ip = {}
             self.users = [msg.split(",") for msg in message[1:].split(";")]
             if not self.users[0][0]:
                 self.users = dict()
+                self.users_id = {}
             else:
-                self.users = {msg[0]: msg[1] for msg in self.users}
+                self.users = {msg[0]: msg[2] for msg in self.users}
+                self.users_id = {msg[0]: msg[1] for msg in self.users}
         except Exception:
             # Se ejecuta cuando se sale del chat y cuando el servidor termina antes que el cliente
             return
@@ -72,7 +79,8 @@ class Client:
                     print(msg, end="")
                 elif id == "1":
                     user = msg.split(";")
-                    self.users[user[0]] = user[1]
+                    self.users[user[0]] = user[2]
+                    self.users_id[user[0]] = user[1] 
             # Se ejecuta cuando se sale del chat y cuando el servidor termina antes que el cliente
             except Exception:
                 break
