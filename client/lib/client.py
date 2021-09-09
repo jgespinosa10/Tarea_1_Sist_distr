@@ -3,12 +3,13 @@
 
 import random
 import socket
-import traceback
 from colorama import init, Fore
 from datetime import datetime
 from threading import Thread
 
 from lib.helpers import makeserversocket, process_ip
+
+# Separators of id's: ":"
 
 class Client:
     def __init__(self, SERVER_HOST, SERVER_PORT, separator_token):
@@ -28,6 +29,9 @@ class Client:
         self.client_color = random.choice(colors)
 
         ## Prepare client for p2p connection
+        # init variables
+        self.client_sockets = set()
+        # create server socket
         self.ss = makeserversocket(self)
         self.client_port = self.ss.getsockname()[1]
         # make a thread that listens for messages to this client & print them
@@ -87,7 +91,6 @@ class Client:
         while True:
             try:
                 message = self.cs.recv(1024).decode()
-
                 msg = message.split("-")
                 id = msg[0]
                 msg = "-".join(msg[1:])
@@ -96,23 +99,23 @@ class Client:
                 elif id == "1":
                     user = msg.split(";")
                     self.users[user[0]] = user[2]
-                    self.users_ip[user[0]] = process_ip(user[1]) 
+                    self.users_ip[user[0]] = process_ip(user[1])
+                    print(f"¡{user[0]}: {user[2]} ha entrado a la sala!\n")
             # Se ejecuta cuando se sale del chat y cuando el servidor termina antes que el cliente
             except Exception:
                 break
+
+    def print_users(self):
+        text= ""
+        for id, name in self.users.items():
+            text += f" {id}. - {name}\n"
+        return text
     
     def process_message(self, msg):
         msg = msg.split(":")
         id = msg[0]
         msg = ":".join(msg[1:])
         return id, msg
-
-    def print_users(self):
-        print(self.users)
-        text= ""
-        for id, name in self.users.items():
-            text += f" {id}. - {name}\n"
-        return text
 
     def run(self):
         while True:
@@ -131,22 +134,18 @@ class Client:
             elif id == '0':
                 # add the datetime, name & the color of the sender
                 date_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 
-                to_send = f"0-{self.client_color}[{date_now}] {self.name}{self.separator_token}{msg}{Fore.RESET}"
+                metadata = f"0-{self.client_color}[{date_now}] {self.name}{self.separator_token}" 
+                to_send = f"{metadata}{msg}{Fore.RESET}"
                 # finally, send the message
                 self.cs.send(to_send.encode())
             elif id.isnumeric() and id in self.users:
                 # stablish p2p connection and send message
-                if id in self.users_sockets:
-                  # send msg through socket
-                  pass
-                else:
-                  skt = socket.socket()
-                  print("voy a intentar conectarme")
-                  print(self.users_ip)
-                  skt.connect(self.users_ip[id])
-                  self.users_sockets[id] = skt
-
-                  
+                if id not in self.users_sockets:
+                    # send msg through socket
+                    skt = socket.socket()
+                    skt.connect(self.users_ip[id])
+                    self.users_sockets[id] = skt
+                self.users_sockets[id].send(f"0:{msg}".encode())
             else:
                 print("Elige un id válido")
 
@@ -156,93 +155,47 @@ class Client:
     
     ## Funtions for peer 2 peer
     # Creates a socket for the client to listen to another clients
-    def listen_to_pm(self):
-      pass
+    def listen(self, user):
+        try:
+            # keep listening for a message from `cs` socket
+            msg = user.recv(1024).decode()
+        except Exception as e:
+            # client no longer connected
+            # remove it from the set
+            print(f"{Fore.RED}[!] Error: {e}{Fore.RESET}")
+            self.client_sockets.remove(user)
+            user.close()
+            for client in self.client_sockets:
+                client.send(f"-1:El cliente {client.id} {client.name} se ha salido".encode())
+            return "disconnected"
+        else:
+            # if we received a message, replace the <SEP> 
+            # token with ": " for nice printing
+            msg = msg.replace(self.separator_token, ": ")
+        return msg
+
+
+    def listen_to_pm(self, client_socket):
+        while True:
+            msg = self.listen(client_socket)
+            id, msg = self.process_message(msg)
+            print(id, id == "0", msg)
+            if id == "-1":
+                break
+            elif id == "0":
+                print(msg)
+        client_socket.close()
 
 
     def accept_private_sockets(self):
       while True:
             # we keep listening for new connections all the time
-            client_socket, client_address = self.ss.accept()
-
-            print("llegue")
+            client_socket, _ = self.ss.accept()
             # # add the new connected client to connected sockets
-            # self.client_sockets.add(user)
-            # # start a new thread that listens for each client's messages
-            # t = Thread(target=self.listen_to_pm, args=())
-            # # make the thread daemon so it ends whenever the main thread ends
-            # t.daemon = True
-            # # start the thread
-            # t.start()
-            # # Count id's
-            # self.user_id += 1
-
-
-
-    
-    def __handlepeer( self, clientsock ):
-
-        host, port = clientsock.getpeername()
-        peerconn = BTPeerConnection( None, host, port, clientsock, debug=False )
-        
-        try:
-            msgtype, msgdata = peerconn.recvdata()
-            if msgtype: msgtype = msgtype.upper()
-            if msgtype in self.handlers:
-                self.handlers[ msgtype ]( peerconn, msgdata )
-        except KeyboardInterrupt:
-            raise
-        except:
-            traceback.print_exc()
-        
-        peerconn.close()
-
-        # end handlepeer method
-
-    
-    def peer2peer_loop( self ):
-        s = self.makeserversocket()
-        s.settimeout(2)
-
-        while not self.shutdown:
-            try:
-                clientsock, clientaddr = s.accept()
-                clientsock.settimeout(None)
-
-                t = Thread( target = self.__handlepeer, args = [ clientsock ] )
-                t.start()
-            except KeyboardInterrupt:
-                self.shutdown = True
-                continue
-            except:
-                traceback.print_exc()
-                continue
-        s.close()
-
-        def sendtopeer( self, peerid, msgtype, msgdata, waitreply=True ):
-	        if self.router:
-	            nextpid, host, port = self.router( peerid )
-	        if not self.router or not nextpid:
-	            return None
-	        return self.connectandsend( host, port, msgtype, msgdata, pid=nextpid, waitreply=waitreply )
-
-        
-    def connectandsend( self, host, port, msgtype, msgdata, pid=None, waitreply=True ):
-        msgreply = []   # list of replies
-        try:
-            peerconn = BTPeerConnection( pid, host, port)
-            peerconn.senddata( msgtype, msgdata )
-            
-            if waitreply:
-                onereply = peerconn.recvdata()
-                while (onereply != (None,None)):
-                    msgreply.append( onereply )
-                    onereply = peerconn.recvdata()
-            peerconn.close()
-        except KeyboardInterrupt:
-            raise
-        except:
-            traceback.print_exc()
-        
-        return msgreply
-  
+            self.client_sockets.add(client_socket)
+            # start a new thread that listens for each client's messages
+            t = Thread(target=self.listen_to_pm, args=(client_socket,))
+            # make the thread daemon so it ends whenever the main thread ends
+            t.daemon = True
+            # start the thread
+            t.start()

@@ -41,7 +41,7 @@ class Server:
     def run(self):
         while True:
             # we keep listening for new connections all the time
-            client_socket, client_address = self.s.accept()
+            client_socket, _ = self.s.accept()
             # clients connected + 1
             self.number_clients += 1
             if self.n_arg and self.number_clients >= self.required_clients:
@@ -85,7 +85,7 @@ class Server:
         return id, msg
 
     # Función ejecutada en un thread, esta se encarga de escuchar la información enviada desde el cliente 
-    def listen_for_client(self, user):
+    def listen_for_client(self, user: User):
         """
         This function keep listening for a message from `cs` socket
         Whenever a message is received, broadcast it to all other connected clients
@@ -113,14 +113,10 @@ class Server:
         for client in self.client_sockets:
             if client != user:
                 try: 
-                    client.cs.send(f"1-{user.id};{user.name}".encode())
-                    client.cs.send(f"0-¡{user.name} ha entrado a la sala!\n".encode())
+                    client.cs.send(f"1-{user.id};{user.ip};{user.name}".encode())
                 except ConnectionAbortedError:
                     break
         users = "-"
-        for client in self.client_sockets:
-            if client != user and client.name:
-                users += f"{client.id},{client.ip},{client.name};"
         users = users.rstrip(";")
         user.cs.send(users.encode())
 
