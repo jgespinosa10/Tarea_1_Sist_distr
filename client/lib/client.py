@@ -9,6 +9,8 @@ class Client:
         self.SERVER_HOST = SERVER_HOST
         self.SERVER_PORT = SERVER_PORT
         self.separator_token = separator_token
+        print(SERVER_HOST)
+        print(SERVER_PORT)
         # init colors
         init()
         # set the available colors
@@ -57,6 +59,9 @@ class Client:
             # a way to exit the program
             if to_send.lower() == 'q':
                 break
+            elif to_send == '':
+                print(f"{Fore.LIGHTBLACK_EX}[!] Debes escribir algo para enviarlo{Fore.RESET}")
+                continue
             # add the datetime, name & the color of the sender
             date_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 
             to_send = f"{self.client_color}[{date_now}] {self.name}{self.separator_token}{to_send}{Fore.RESET}"

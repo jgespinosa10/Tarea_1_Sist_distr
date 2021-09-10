@@ -3,6 +3,7 @@ from threading import Thread
 from colorama import Fore, init
 from collections import deque
 
+# El servidor quedó modelado como una clase
 class Server:
     def __init__(self, n_clients, n_arg, SERVER_HOST, SERVER_PORT, separator_token):
         # init variables
@@ -14,7 +15,9 @@ class Server:
         self.enough_clients = not n_arg
         self.number_clients = 0
         self.required_clients = n_clients
+        # create a queue to stack the incoming messages
         self.msg_queue = deque()
+
         # init colors
         init()
         # initialize list/set of all connected client's sockets
@@ -84,10 +87,11 @@ class Server:
             if len(self.msg_queue) != 0 and self.enough_clients:
                 msg = self.msg_queue.popleft()
                 msg += '\n'
+                # so the message doesn´t print if it´s empty
                 print(msg, end="")
                 for client_socket in self.client_sockets:
                     try: 
                         client_socket.send(msg.encode())
-                    except ConnectionAbortedError:
-                        break
+                    except (ConnectionAbortedError, OSError):
+                        return
 
