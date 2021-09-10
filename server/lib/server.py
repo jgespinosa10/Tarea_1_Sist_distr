@@ -81,10 +81,10 @@ class Server:
         return msg
 
     def process_message(self, msg):
-        msg = msg.split(":")
-        id = msg[0]
+        msg = msg.split("-")
+        mid = msg[0]
         msg = ":".join(msg[1:])
-        return id, msg
+        return mid, msg
 
     # Función ejecutada en un thread, esta se encarga de escuchar la información enviada desde el cliente 
     def listen_for_client(self, user: User):
