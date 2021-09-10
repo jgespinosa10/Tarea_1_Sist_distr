@@ -2,6 +2,8 @@ import socket
 from collections import deque
 from colorama import Fore, init
 from threading import Thread
+import json
+from time import sleep
 
 from lib.user import User
 
@@ -110,15 +112,27 @@ class Server:
                 pass
 
     def send_users(self, user):
+
+        users_name = dict()
+        users_ip = dict()
+
         for client in self.client_sockets:
+            # Se envia a cada cliente el nombre y la ip del nuevo cliente
             if client != user:
-                try: 
+                try:
                     client.cs.send(f"1-{user.id};{user.ip};{user.name}".encode())
                 except ConnectionAbortedError:
                     break
-        users = "-"
-        users = users.rstrip(";")
-        user.cs.send(users.encode())
+
+                # Guarda la direccion y nombre de los clientes antiguos para enviarlos al nuevo cliente
+                users_name[client.id] = client.name
+
+                users_ip[client.id] = client.ip
+
+        # Se envia la información de los clientes al nuevo cliente
+        users = {"name": users_name, "ip": users_ip}
+        user.cs.send(json.dumps(users).encode())
+
 
     def send_messages(self):
         while True:

@@ -6,6 +6,7 @@ import socket
 from colorama import init, Fore
 from datetime import datetime
 from threading import Thread
+import json
 
 from lib.helpers import makeserversocket, process_ip
 
@@ -59,19 +60,17 @@ class Client:
         print(f"{self.client_color}Hola {self.name}, bienvenid@ al chat!{Fore.RESET}")
         self.cs.send(self.name.encode())
 
+        self.users = dict()
+        self.users_ip = dict()
+
         #recieve list of id's
         try:
-            message = self.cs.recv(1024).decode()
-            self.users_sockets ={}
-            self.users_ip = {}
-            self.users = [msg.split(",") for msg in message[1:].split(";")]
-            if not self.users[0][0]:
-                self.users = dict()
-                self.users_ip = {}
-            else:
-                # We obtain (ip, port) for each user
-                self.users_ip = {msg[0]: process_ip(msg[1]) for msg in self.users}
-                self.users = {msg[0]: msg[2] for msg in self.users}
+            self.users_sockets = dict()
+
+            clients_info = json.loads(self.cs.recv(1024).decode())
+
+            self.users = clients_info["name"]
+            self.users_ip = {k: process_ip(v) for k, v in clients_info["ip"].items()}
                 
         except Exception as e:
             print(e)
