@@ -100,14 +100,14 @@ class Client:
             except Exception:
                 break
 
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    # Función que entrega un texto de los usuarios con sus respectivs id's
     def print_users(self):
         text= ""
         for id, name in self.users.items():
             text += f" {id}. {name}\n"
         return text
 
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    # Función que se utiliza para correr el programa principal de envío de mensajes
     def run(self):
         while True:
             # input message we want to send to the server
