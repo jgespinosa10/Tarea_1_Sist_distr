@@ -107,7 +107,7 @@ class Client:
     def print_users(self):
         text= ""
         for id, name in self.users.items():
-            text += f" {id}. - {name}\n"
+            text += f" {id}. {name}\n"
         return text
     
     def process_message(self, msg):
@@ -128,6 +128,7 @@ class Client:
             ]))
             # a way to exit the program
             id, msg = self.process_message(msg)
+            
             if id == '-1':
                 break
             elif id == '0':
@@ -144,7 +145,10 @@ class Client:
                     skt = socket.socket()
                     skt.connect(self.users_ip[id])
                     self.users_sockets[id] = skt
-                self.users_sockets[id].send(f"0:{msg}".encode())
+                date_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 
+                metadata = f"0:{self.client_color}[{date_now}] {self.name} (Private){self.separator_token}" 
+                to_send = f"{metadata}{msg}{Fore.RESET}"
+                self.users_sockets[id].send(to_send.encode())
             else:
                 print("Elige un id válido")
 
@@ -178,7 +182,6 @@ class Client:
         while True:
             msg = self.listen(client_socket)
             id, msg = self.process_message(msg)
-            print(id, id == "0", msg)
             if id == "-1":
                 break
             elif id == "0":
