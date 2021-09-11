@@ -8,14 +8,15 @@ def makeserversocket( self, backlog=5 ) -> socket.socket:
     s.listen( backlog )
     return s
 
-# XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+# Procesa los ips de los que clientes que se reciben
+# por parte del servidor
 def process_ip( str_ip ):
   ip = str_ip.split("-")
   ip[1] = int(ip[1])
   return tuple(ip)
 
-# Función que no dependía del Objeto, por lo tanto puede ser un helper
-# XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+# Toma un mensaje recibido del servidor y lo procesa para
+# dividirlo en su id y el mensaje respectivo
 def process_message(msg):
     msg = msg.split(":")
     id = msg[0]
