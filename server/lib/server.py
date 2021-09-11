@@ -3,8 +3,6 @@ from collections import deque
 from colorama import Fore, init
 from threading import Thread
 import json
-from time import sleep
-
 from lib.user import User
 
 
@@ -21,6 +19,7 @@ class Server:
         self.required_clients = n_clients
         self.msg_queue = deque()
         self.user_id = 1
+        
         # init colors
         init()
         # initialize list/set of all connected client's sockets
@@ -34,6 +33,7 @@ class Server:
         # Aquí se inserta el "n" que define la cantidad de personas a conectar
         self.s.listen()
         print(f"[*] Listening as {SERVER_HOST}:{SERVER_PORT}")
+
         # Add thread to check message queue and send messages to all clients
         queue_thread = Thread(target=self.send_messages)
         queue_thread.daemon = True
@@ -112,7 +112,6 @@ class Server:
                 pass
 
     def send_users(self, user):
-
         users_name = dict()
         users_ip = dict()
 

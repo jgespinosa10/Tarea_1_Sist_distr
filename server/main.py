@@ -5,6 +5,7 @@ from lib.token import NGROK_TOKEN
 from pyngrok import ngrok
 
 if __name__ == "__main__":
+    # recibimos los posibles argumentos utilizados al iniciar el servidor 
     n_clients, n_arg = process_args()
     # server's IP address
     SERVER_HOST = "0.0.0.0"
@@ -12,8 +13,10 @@ if __name__ == "__main__":
     separator_token = "<SEP>" # we will use this to separate the client name & message
     server = Server(n_clients, n_arg, SERVER_HOST, SERVER_PORT, separator_token)
 
-    # Set up an ngrok tunnel to connect a public URL to localhost
+    ### Set up an ngrok tunnel to connect a public URL to localhost
+    # Seteamos al token de ngrok utilizaremos
     ngrok.set_auth_token(NGROK_TOKEN)
+    # Creamos el ssh tunnel para poder recibir una URL y puerto a utilizar, estos quedan en las variables descritas a continuación
     ssh_tunnel = ngrok.connect(SERVER_PORT, "tcp")
     print("URL:", ssh_tunnel.public_url.split('/')[-1].split(':')[0])
     print("PORT:", ssh_tunnel.public_url.split(':')[-1])

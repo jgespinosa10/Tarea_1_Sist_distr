@@ -7,8 +7,7 @@ from colorama import init, Fore
 from datetime import datetime
 from threading import Thread
 import json
-
-from lib.helpers import makeserversocket, process_ip
+from lib.helpers import makeserversocket, process_ip, process_message
 
 # Separators of id's: ":"
 
@@ -17,6 +16,9 @@ class Client:
         self.SERVER_HOST = SERVER_HOST
         self.SERVER_PORT = SERVER_PORT
         self.separator_token = separator_token
+        self.users = dict()
+        self.users_ip = dict()
+
         # init colors
         init()
         # set the available colors
@@ -51,7 +53,6 @@ class Client:
         print("[+] Connected.")
         self.client_hostname = self.cs.getsockname()[0]
 
-
         # inform the server client's ip address
         self.cs.send(f"{self.client_hostname}-{self.client_port}".encode())
 
@@ -60,21 +61,16 @@ class Client:
         print(f"{self.client_color}Hola {self.name}, bienvenid@ al chat!{Fore.RESET}")
         self.cs.send(self.name.encode())
 
-        self.users = dict()
-        self.users_ip = dict()
 
         #recieve list of id's
         try:
             self.users_sockets = dict()
-
             clients_info = json.loads(self.cs.recv(1024).decode())
-
             self.users = clients_info["name"]
             self.users_ip = {k: process_ip(v) for k, v in clients_info["ip"].items()}
                 
         except Exception as e:
             print(e)
-
             # Se ejecuta cuando se sale del chat y cuando el servidor termina antes que el cliente
             return
         # make a thread that listens for messages to this client & print them
@@ -104,18 +100,14 @@ class Client:
             except Exception:
                 break
 
+    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     def print_users(self):
         text= ""
         for id, name in self.users.items():
             text += f" {id}. {name}\n"
         return text
-    
-    def process_message(self, msg):
-        msg = msg.split(":")
-        id = msg[0]
-        msg = ":".join(msg[1:])
-        return id, msg
 
+    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     def run(self):
         while True:
             # input message we want to send to the server
@@ -127,7 +119,7 @@ class Client:
                 "Escribe de la siguiente forma: {id}: {mensaje}\n"
             ]))
             # a way to exit the program
-            id, msg = self.process_message(msg)
+            id, msg = process_message(msg)
             
             if id == '-1':
                 break
@@ -157,38 +149,10 @@ class Client:
 
     
     ## Funtions for peer 2 peer
-    # Creates a socket for the client to listen to another clients
-    def listen(self, user):
-        try:
-            # keep listening for a message from `cs` socket
-            msg = user.recv(1024).decode()
-        except Exception as e:
-            # client no longer connected
-            # remove it from the set
-            print(f"{Fore.RED}[!] Error: {e}{Fore.RESET}")
-            self.client_sockets.remove(user)
-            user.close()
-            for client in self.client_sockets:
-                client.send(f"-1:El cliente {client.id} {client.name} se ha salido".encode())
-            return "disconnected"
-        else:
-            # if we received a message, replace the <SEP> 
-            # token with ": " for nice printing
-            msg = msg.replace(self.separator_token, ": ")
-        return msg
-
-
-    def listen_to_pm(self, client_socket):
-        while True:
-            msg = self.listen(client_socket)
-            id, msg = self.process_message(msg)
-            if id == "-1":
-                break
-            elif id == "0":
-                print(msg)
-        client_socket.close()
-
-
+    """ Thread encargado de hacer toda la conversación P2P, lo que hace es... (insertar pequeño resumen del flujo) 
+    """ 
+    # Función encargada del flujo principal del P2P, esta se encarga de estar siempre escuchando posibles conexiones
+    # con este cliente y así poder abrir un socket para poder hablar con el otro cliente.
     def accept_private_sockets(self):
       while True:
             # we keep listening for new connections all the time
@@ -201,3 +165,35 @@ class Client:
             t.daemon = True
             # start the thread
             t.start()
+
+    # Conexión hecha entre 2 clientes, donde el client_socket es el socket del otro cliente, aquí se escucha la conversación
+    # entre ambos clientes.
+    def listen_to_pm(self, client_socket):
+        while True:
+            msg = self.listen(client_socket)
+            id, msg = process_message(msg)
+            if id == "-1":
+                break
+            elif id == "0":
+                print(msg)
+        client_socket.close()
+
+    # Función encargada de escuchar al otro cliente en la comunicación prívada
+    def listen(self, client_socket):
+        try:
+            # keep listening for a message from `cs` socket
+            msg = client_socket.recv(1024).decode()
+        except Exception as e:
+            # client no longer connected
+            # remove it from the set
+            print(f"{Fore.RED}[!] Error: {e}{Fore.RESET}")
+            self.client_sockets.remove(client_socket)
+            client_socket.close()
+            for client in self.client_sockets:
+                client.send(f"-1:El cliente {client.id} {client.name} se ha salido".encode())
+            return "disconnected"
+        else:
+            # if we received a message, replace the <SEP> 
+            # token with ": " for nice printing
+            msg = msg.replace(self.separator_token, ": ")
+        return msg
