@@ -95,11 +95,12 @@ class Server:
         msg = self.listen(user)
         if msg == "-1":
             return
-        user.ip = msg
+        msg = msg.split("-")
+        user.ip = "-".join(msg[:2])
+
         print(f"[+] {user.ip} connected.")
 
-        msg = self.listen(user)
-        user.name = msg
+        user.name = "-".join(msg[2:])
         self.send_users(user)
         while True:
             msg = self.listen(user)

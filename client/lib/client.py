@@ -53,13 +53,12 @@ class Client:
         print("[+] Connected.")
         self.client_hostname = self.cs.getsockname()[0]
 
-        # inform the server client's ip address
-        self.cs.send(f"{self.client_hostname}-{self.client_port}".encode())
-
         # prompt the client for a name
         self.name = input("Enter your name: ")
         print(f"{self.client_color}Hola {self.name}, bienvenid@ al chat!{Fore.RESET}")
-        self.cs.send(self.name.encode())
+
+        # inform the server our ip, port and name
+        self.cs.send(f"{self.client_hostname}-{self.client_port}-{self.name}".encode())
 
 
         #recieve list of id's
