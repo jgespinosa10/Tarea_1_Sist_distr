@@ -44,14 +44,10 @@ class Server:
         while True:
             # we keep listening for new connections all the time
             client_socket, _ = self.s.accept()
-            # clients connected + 1
-            self.number_clients += 1
-            if self.n_arg and self.number_clients >= self.required_clients:
-                self.enough_clients = True
+
             # create user object
             user = User(self.user_id, client_socket, None)
-            # add the new connected client to connected sockets
-            self.client_sockets.add(user)
+
             # start a new thread that listens for each client's messages
             t = Thread(target=self.listen_for_client, args=(user,))
             # make the thread daemon so it ends whenever the main thread ends
@@ -101,7 +97,19 @@ class Server:
         print(f"[+] {user.ip} connected.")
 
         user.name = "-".join(msg[2:])
+        self.client_sockets.add(user)
+
         self.send_users(user)
+
+        # we must recieve confirmation
+        self.listen(user)
+
+        # update the minimum of clients condition
+        self.number_clients += 1
+        if self.n_arg and self.number_clients >= self.required_clients:
+            self.enough_clients = True
+
+
         while True:
             msg = self.listen(user)
             id, msg = self.process_message(msg)

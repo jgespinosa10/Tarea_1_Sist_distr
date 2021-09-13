@@ -67,6 +67,7 @@ class Client:
             clients_info = json.loads(self.cs.recv(1024).decode())
             self.users = clients_info["name"]
             self.users_ip = {k: process_ip(v) for k, v in clients_info["ip"].items()}
+            self.cs.send("confirmation".encode())
                 
         except Exception as e:
             print(e)
