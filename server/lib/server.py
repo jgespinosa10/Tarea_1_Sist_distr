@@ -19,6 +19,7 @@ class Server:
         self.required_clients = n_clients
         self.msg_queue = deque()
         self.user_id = 1
+        self.clients_sent = 0
         
         # init colors
         init()
@@ -42,25 +43,38 @@ class Server:
 
     def run(self):
         while True:
-            # we keep listening for new connections all the time
-            client_socket, _ = self.s.accept()
+            try:
+              # we keep listening for new connections all the time
+              client_socket, _ = self.s.accept()
+              read = client_socket.makefile('r')
+              write = client_socket.makefile('w')
 
-            # create user object
-            user = User(self.user_id, client_socket, None)
+              # create user object
+              user = User(self.user_id, client_socket, None, read, write)
 
-            # start a new thread that listens for each client's messages
-            t = Thread(target=self.listen_for_client, args=(user,))
-            # make the thread daemon so it ends whenever the main thread ends
-            t.daemon = True
-            # start the thread
-            t.start()
-            # Count id's
-            self.user_id += 1
+              # start a new thread that listens for each client's messages
+              t = Thread(target=self.listen_for_client, args=(user,))
+              # make the thread daemon so it ends whenever the main thread ends
+              t.daemon = True
+              # start the thread
+              t.start()
+              # Count id's
+              self.user_id += 1
+            except KeyboardInterrupt:
+              self.clients_sent = 0
+              self.msg_queue.append("kill")
+              while self.clients_sent != self.number_clients:
+                pass
+              raise KeyboardInterrupt
+
 
     def listen(self, user):
+      user.read = user.cs.makefile('r')
+      with user.cs, user.read:
         try:
-            # keep listening for a message from `cs` socket
-            msg = user.cs.recv(1024).decode()
+            # keep listening for a message
+            msg = user.read.readline().strip()
+
         except Exception as e:
             # client no longer connected
             # remove it from the set
@@ -68,7 +82,7 @@ class Server:
             self.client_sockets.remove(user)
             user.cs.close()
             for client in self.client_sockets:
-                client.cs.send(f"0-El cliente {client.id} {client.name} se ha salido".encode())
+                client.send(f"0-El cliente {client.id} {client.name} se ha salido")
             return "disconnected"
         else:
             # if we received a message, replace the <SEP> 
@@ -116,7 +130,7 @@ class Server:
             if id == "-1":
                 break
             elif id == "0":
-                self.msg_queue.append(msg)
+                self.msg_queue.append("0-" + msg)
             elif id == "2":
                 pass
 
@@ -124,22 +138,17 @@ class Server:
         users_name = dict()
         users_ip = dict()
 
+        self.msg_queue.append(f"1-{user.id};{user.ip};{user.name}")
         for client in self.client_sockets:
             # Se envia a cada cliente el nombre y la ip del nuevo cliente
             if client != user:
-                try:
-                    client.cs.send(f"1-{user.id};{user.ip};{user.name}".encode())
-                except ConnectionAbortedError:
-                    break
-
                 # Guarda la direccion y nombre de los clientes antiguos para enviarlos al nuevo cliente
                 users_name[client.id] = client.name
-
                 users_ip[client.id] = client.ip
 
         # Se envia la información de los clientes al nuevo cliente
         users = {"name": users_name, "ip": users_ip}
-        user.cs.send(json.dumps(users).encode())
+        user.send(json.dumps(users))
 
 
     def send_messages(self):
@@ -148,9 +157,10 @@ class Server:
             if len(self.msg_queue) != 0 and self.enough_clients:
                 msg = self.msg_queue.popleft()
                 msg += '\n'
-                print(msg, end="")
+                print(msg)
                 for user in self.client_sockets:
                     try: 
-                        user.cs.send(("0-" + msg).encode())
+                        user.send(msg)
                     except ConnectionAbortedError:
                         break
+                    self.clients_sent += 1

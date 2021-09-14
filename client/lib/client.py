@@ -18,6 +18,7 @@ class Client:
         self.separator_token = separator_token
         self.users = dict()
         self.users_ip = dict()
+        self.server_alive = True
 
         # init colors
         init()
@@ -50,6 +51,9 @@ class Client:
         print(f"[*] Connecting to {self.SERVER_HOST}:{self.SERVER_PORT}...")
         # connect to the server
         self.cs.connect((self.SERVER_HOST, self.SERVER_PORT))
+        self.read = self.cs.makefile('r')
+        self.write = self.cs.makefile('w')
+
         print("[+] Connected.")
         self.client_hostname = self.cs.getsockname()[0]
 
@@ -58,16 +62,15 @@ class Client:
         print(f"{self.client_color}Hola {self.name}, bienvenid@ al chat!{Fore.RESET}")
 
         # inform the server our ip, port and name
-        self.cs.send(f"{self.client_hostname}-{self.client_port}-{self.name}".encode())
-
+        self.send(f"{self.client_hostname}-{self.client_port}-{self.name}")
 
         #recieve list of id's
         try:
             self.users_sockets = dict()
-            clients_info = json.loads(self.cs.recv(1024).decode())
+            clients_info = json.loads(self.listen_server())
             self.users = clients_info["name"]
             self.users_ip = {k: process_ip(v) for k, v in clients_info["ip"].items()}
-            self.cs.send("confirmation".encode())
+            self.send("confirmation")
                 
         except Exception as e:
             print(e)
@@ -80,17 +83,37 @@ class Client:
         # start the thread
         t.start()
 
+    def send(self, msg):
+      with self.cs, self.write:
+        self.write.write(msg + '\n')
+        self.write.flush()
+      self.write = self.cs.makefile('w')
+      
+    
+    def listen_server(self):
+      with self.cs, self.read:
+        msg = self.read.readline().strip()
+        if msg == "":
+          self.server_alive = False
+          exit()
+      self.read = self.cs.makefile('r')
+      return msg
+
     ## Functions for client-server main chat
     # Function excuted in thread, listen information from server
     def listen_for_messages(self):
-        while True:
+        while self.server_alive:
             try:
-                message = self.cs.recv(1024).decode()
-                msg = message.split("-")
+                msg = self.listen_server()
+                if msg == "kill":
+                  self.server_alive = False
+                  break
+                msg = msg.split("-")
                 id = msg[0]
                 msg = "-".join(msg[1:])
+
                 if id == "0":
-                    print(msg, end="")
+                    print(msg)
                 elif id == "1":
                     user = msg.split(";")
                     self.users[user[0]] = user[2]
@@ -109,7 +132,7 @@ class Client:
 
     # Función que se utiliza para correr el programa principal de envío de mensajes
     def run(self):
-        while True:
+        while self.server_alive:
             # input message we want to send to the server
             msg =  input("".join([
                 "Menú:\n",
@@ -118,8 +141,12 @@ class Client:
                 self.print_users(),
                 "Escribe de la siguiente forma: {id}: {mensaje}\n"
             ]))
+
+            if not self.server_alive:
+              raise KeyboardInterrupt
             # a way to exit the program
             id, msg = process_message(msg)
+            msg += '\n'
             
             if id == '-1':
                 break
@@ -129,7 +156,7 @@ class Client:
                 metadata = f"0-{self.client_color}[{date_now}] {self.name}{self.separator_token}" 
                 to_send = f"{metadata}{msg}{Fore.RESET}"
                 # finally, send the message
-                self.cs.send(to_send.encode())
+                self.send(to_send)
             elif id.isnumeric() and id in self.users:
                 # stablish p2p connection and send message
                 if id not in self.users_sockets:

@@ -10,4 +10,8 @@ if __name__ == "__main__":
     SERVER_PORT = int(input("Indicate PORT: "))
 
     client = Client(SERVER_HOST, SERVER_PORT, separator_token)
-    client.run()
+    try:
+      client.run()
+    except KeyboardInterrupt:
+      print("Client or server is down")
+      print("Goodbye!")

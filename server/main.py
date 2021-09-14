@@ -21,5 +21,8 @@ if __name__ == "__main__":
     print("URL:", ssh_tunnel.public_url.split('/')[-1].split(':')[0])
     print("PORT:", ssh_tunnel.public_url.split(':')[-1])
 
-    server.run()
+    try:
+      server.run()
+    except KeyboardInterrupt:
+      print("Shutting down server...")
     ngrok.kill()
