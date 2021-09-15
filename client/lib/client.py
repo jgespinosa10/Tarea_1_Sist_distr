@@ -167,7 +167,8 @@ class Client:
                 date_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 
                 metadata = f"0:{self.client_color}[{date_now}] {self.name} (Private){self.separator_token}" 
                 to_send = f"{metadata}{msg}{Fore.RESET}"
-                self.users_sockets[id].send(to_send.encode())
+                # self.users_sockets[id].send(to_send.encode())
+                self.send_pm(self.users_sockets[id], to_send)
             else:
                 print("Elige un id válido")
 
@@ -198,18 +199,29 @@ class Client:
     def listen_to_pm(self, client_socket):
         while True:
             msg = self.listen(client_socket)
+            print("recibi:", msg)
             id, msg = process_message(msg)
             if id == "-1":
                 break
             elif id == "0":
                 print(msg)
         client_socket.close()
+    
+    def send_pm(self, client_socket, msg):
+        write = client_socket.makefile('w')
+        print("sending:", msg)
+        with client_socket, write:
+          write.write(msg + '\n')
+          write.flush()
+
 
     # Función encargada de escuchar al otro cliente en la comunicación prívada
     def listen(self, client_socket):
         try:
             # keep listening for a message from `cs` socket
-            msg = client_socket.recv(1024).decode()
+            read = client_socket.makefile('r')
+            with client_socket, read:
+              msg = read.readline().strip()
         except Exception as e:
             # client no longer connected
             # remove it from the set
