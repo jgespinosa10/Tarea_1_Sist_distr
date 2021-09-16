@@ -5,13 +5,15 @@ Aplicación escrita en Python (v. 3.9.6)
 Librerías utilizadas:
 
   `sockets`: Utilizada para la comunicación entre aplicaciones, se utiliza el protocolo TCP.  
-  `colorama`: Para darle estilo a la consola.  
-  `random`: Generar elementos random dentro de la app.  
+  `json`: Para comunicas objetos JSON entre clientes y servidor.  
+  `datetime`: Generar timestamps dentro de los mensaje.  
   `threading`: Para poder paralelizar la ejecución tanto del servidor como del cliente.  
   `signal`: Para poder manejar las interrupciones por teclado y evitar que se caiga la app.  
   `sys`: Para obtener los parametros entregados en la linea de comando.  
-  `collection`: Sacamos la implementación de *stack* para tener todos los mensajes.
-  `pyngrok`: Para manejar la conexión mediante una URL pública.
+  `collection`: Sacamos la implementación de *stack* para tener todos los mensajes. la app.  
+  `pyngrok`: Para manejar la conexión mediante una URL pública.  
+  `os`: Para hacer llamadas al sistema operativo y terminar el proceso.  
+  `queue`: Para implementar la cola de mensajes.
 
 Para instalar las librerías, puedes correr el comando en esta carpeta:
 
@@ -21,7 +23,7 @@ pip install -r requirements.txt
 
 Además, es necesario setear el token de autorización de `ngrok`. En `https://ngrok.com/` se puede crear una cuenta gratuita y el token de autorización se encuentra en `https://dashboard.ngrok.com/get-started/your-authtoken`. Con el token, ahora se debe crear el archivo `server/lib/token.py`, e insertar la variable ```NGROK_TOKEN``` con el valor del token, de la forma:
 
-``` python 
+``` python
 # server/lib/token.py
 NGROK_TOKEN = "<your-token>"
 ```
@@ -51,5 +53,7 @@ Luego, abrimos la terminal en el directorio del cliente y ejectamos el código d
 cd client
 python3 ./main.py
 ```
+
+Se va a preguntar la URL y el puerto a conectarse (información que se da al iniciar el servidor)
 
 La primera vez corriendo el servidor, se va a descargar ```ngrok```.
