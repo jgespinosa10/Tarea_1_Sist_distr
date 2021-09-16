@@ -100,6 +100,7 @@ class Server:
                 with self.clients_lock:
                   del self.clients[int(user.id)]
                   self.msg_queue.put(f"k-{user.id}-{user.name} ha salido del chat")
+                  self.number_clients -= 1
                   break
                 
 

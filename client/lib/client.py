@@ -108,7 +108,7 @@ class Client:
             print(msg)
         elif id == "1":
             user = msg.split(";")
-            if self.id != user[0]:
+            if int(self.id) != int(user[0]):
               self.users[user[0]] = {'id': user[0], 'name': user[2], 'ip': user[1]}
             print(f"¡{user[0]}: {user[2]} ha entrado a la sala!\n")
         elif id == "k":
