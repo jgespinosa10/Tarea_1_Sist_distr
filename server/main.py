@@ -10,8 +10,7 @@ if __name__ == "__main__":
     # server's IP address
     SERVER_HOST = "0.0.0.0"
     SERVER_PORT = 5002 # port we want to use
-    separator_token = "<SEP>" # we will use this to separate the client name & message
-    server = Server(n_clients, n_arg, SERVER_HOST, SERVER_PORT, separator_token)
+    server = Server(n_clients, n_arg, SERVER_HOST, SERVER_PORT)
 
     ### Set up an ngrok tunnel to connect a public URL to localhost
     # Seteamos al token de ngrok utilizaremos

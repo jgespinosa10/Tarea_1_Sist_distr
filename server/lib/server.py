@@ -1,166 +1,107 @@
 import socket
-from collections import deque
-from colorama import Fore, init
-from threading import Thread
-import json
+from queue import Queue
+from threading import Thread, Lock
 from lib.user import User
+from lib.helpers import process_message
+import json
+from time import sleep
 
 
 class Server:
-    def __init__(self, n_clients, n_arg, SERVER_HOST, SERVER_PORT, separator_token):
-        # init variables
+    def __init__(self, n_clients, n_arg, SERVER_HOST, SERVER_PORT): 
         self.SERVER_HOST = SERVER_HOST
         self.SERVER_PORT = SERVER_PORT
-        self.separator_token = separator_token
-        # n_arg = true if -n present in args
         self.n_arg = n_arg
         self.enough_clients = not n_arg
+        self.first_messages = True
         self.number_clients = 0
         self.required_clients = n_clients
-        self.msg_queue = deque()
+        self.msg_queue = Queue()
+        self.clients_lock = Lock()
         self.user_id = 1
-        self.clients_sent = 0
-        
-        # init colors
-        init()
-        # initialize list/set of all connected client's sockets
-        self.client_sockets = set()
-        # create a TCP socket
-        self.s = socket.socket()
-        # make the port as reusable port
-        self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        # bind the socket to the address we specified
-        self.s.bind((SERVER_HOST, SERVER_PORT))
-        # Aquí se inserta el "n" que define la cantidad de personas a conectar
-        self.s.listen()
-        print(f"[*] Listening as {SERVER_HOST}:{SERVER_PORT}")
 
-        # Add thread to check message queue and send messages to all clients
-        queue_thread = Thread(target=self.send_messages)
-        queue_thread.daemon = True
-        queue_thread.start()
+        self.clients = {}
+
+        # create a TCP socket and make it reusable
+        self.s = socket.socket()
+        self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.s.bind((SERVER_HOST, SERVER_PORT))
+
+        self.queue_thread = Thread(target=self.send_messages)
+        self.queue_thread.daemon = True
 
 
     def run(self):
+        self.s.listen()
+        print(f"[*] Listening as {self.SERVER_HOST}:{self.SERVER_PORT}")
+
+        self.queue_thread.start()
+
         while True:
-            try:
-              # we keep listening for new connections all the time
-              client_socket, _ = self.s.accept()
-              read = client_socket.makefile('r')
-              write = client_socket.makefile('w')
+          client_socket, _ = self.s.accept()
 
-              # create user object
-              user = User(self.user_id, client_socket, None, read, write)
+          user = User(self.user_id, client_socket, None)
+          t = Thread(target=self.listen_client, args=(user,))
+          t.daemon = True
+          t.start()
 
-              # start a new thread that listens for each client's messages
-              t = Thread(target=self.listen_for_client, args=(user,))
-              # make the thread daemon so it ends whenever the main thread ends
-              t.daemon = True
-              # start the thread
-              t.start()
-              # Count id's
-              self.user_id += 1
-            except KeyboardInterrupt:
-              self.clients_sent = 0
-              self.msg_queue.append("kill")
-              while self.clients_sent != self.number_clients:
-                pass
-              raise KeyboardInterrupt
+          self.user_id += 1
 
-
-    def listen(self, user):
-      user.read = user.cs.makefile('r')
-      with user.cs, user.read:
-        try:
-            # keep listening for a message
-            msg = user.read.readline().strip()
-
-        except Exception as e:
-            # client no longer connected
-            # remove it from the set
-            print(f"{Fore.RED}[!] Error: {e}{Fore.RESET}")
-            self.client_sockets.remove(user)
-            user.cs.close()
-            for client in self.client_sockets:
-                client.send(f"0-El cliente {client.id} {client.name} se ha salido")
-            return "disconnected"
-        else:
-            # if we received a message, replace the <SEP> 
-            # token with ": " for nice printing
-            msg = msg.replace(self.separator_token, ": ")
-        return msg
-
-    def process_message(self, msg):
-        msg = msg.split("-")
-        mid = msg[0]
-        msg = ":".join(msg[1:])
-        return mid, msg
-
-    # Función ejecutada en un thread, esta se encarga de escuchar la información enviada desde el cliente 
-    def listen_for_client(self, user: User):
-        """
-        This function keep listening for a message from `cs` socket
-        Whenever a message is received, broadcast it to all other connected clients
-        """
-        msg = self.listen(user)
-        if msg == "-1":
-            return
+    def send_messages(self):
+        while True:
+            # if queue has msgs, remove first msg in queue and send it to all clients
+            if not self.msg_queue.empty() and self.enough_clients:
+                msg = self.msg_queue.get()
+                print(msg)
+                with self.clients_lock:
+                  for id, user in self.clients.items():
+                      user.send(msg)
+                if self.first_messages:
+                  sleep(0.1) # waiting for message to arrive
+                if self.msg_queue.empty():
+                  self.first_messages = False
+    
+    def listen_client(self, user):
+        msg = user.listen()
         msg = msg.split("-")
         user.ip = "-".join(msg[:2])
 
         print(f"[+] {user.ip} connected.")
 
         user.name = "-".join(msg[2:])
-        self.client_sockets.add(user)
 
-        self.send_users(user)
+        clients = {}
+        clients['self'] = user.id
+        for id, client in self.clients.items():
+            clients[id] = client.to_json()
 
-        # we must recieve confirmation
-        self.listen(user)
+        user.send(json.dumps(clients))
+        user.listen()
 
+        with self.clients_lock:
+          self.clients[int(user.id)] = user
         # update the minimum of clients condition
         self.number_clients += 1
         if self.n_arg and self.number_clients >= self.required_clients:
             self.enough_clients = True
-
-
+        # with self.queue_lock: 
+        self.msg_queue.put(f"1-{user.id};{user.ip};{user.name}")
+        
         while True:
-            msg = self.listen(user)
-            id, msg = self.process_message(msg)
-            if id == "-1":
-                break
-            elif id == "0":
-                self.msg_queue.append("0-" + msg)
-            elif id == "2":
-                pass
-
-    def send_users(self, user):
-        users_name = dict()
-        users_ip = dict()
-
-        self.msg_queue.append(f"1-{user.id};{user.ip};{user.name}")
-        for client in self.client_sockets:
-            # Se envia a cada cliente el nombre y la ip del nuevo cliente
-            if client != user:
-                # Guarda la direccion y nombre de los clientes antiguos para enviarlos al nuevo cliente
-                users_name[client.id] = client.name
-                users_ip[client.id] = client.ip
-
-        # Se envia la información de los clientes al nuevo cliente
-        users = {"name": users_name, "ip": users_ip}
-        user.send(json.dumps(users))
+            msg = user.listen()
+            if msg == "":
+              id, msg = "k", ""
+            else:
+              id, msg = process_message(msg)
+            if id == "0":
+                  print("en colando")
+                  self.msg_queue.put("0-" + msg)
+            elif id == "k":
+                with self.clients_lock:
+                  del self.clients[int(user.id)]
+                  self.msg_queue.put(f"k-{user.id}-{user.name} ha salido del chat")
+                  break
+                
 
 
-    def send_messages(self):
-        while True:
-            # if queue has msgs, remove first msg in queue and send it to all clients
-            if len(self.msg_queue) != 0 and self.enough_clients:
-                msg = self.msg_queue.popleft()
-                msg += '\n'
-                print(msg)
-                for user in self.client_sockets:
-                    try: 
-                        user.send(msg)
-                    except ConnectionAbortedError:
-                        break
-                    self.clients_sent += 1
+
