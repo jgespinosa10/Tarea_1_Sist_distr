@@ -8,7 +8,7 @@ from time import sleep
 
 
 class Server:
-    def __init__(self, n_clients, n_arg, SERVER_HOST, SERVER_PORT): 
+    def __init__(self, n_clients, n_arg, SERVER_HOST, SERVER_PORT):
         self.SERVER_HOST = SERVER_HOST
         self.SERVER_PORT = SERVER_PORT
         self.n_arg = n_arg
@@ -30,7 +30,6 @@ class Server:
         self.queue_thread = Thread(target=self.send_messages)
         self.queue_thread.daemon = True
 
-
     def run(self):
         self.s.listen()
         print(f"[*] Listening as {self.SERVER_HOST}:{self.SERVER_PORT}")
@@ -38,14 +37,14 @@ class Server:
         self.queue_thread.start()
 
         while True:
-          client_socket, _ = self.s.accept()
+            client_socket, _ = self.s.accept()
 
-          user = User(self.user_id, client_socket, None)
-          t = Thread(target=self.listen_client, args=(user,))
-          t.daemon = True
-          t.start()
+            user = User(self.user_id, client_socket, None)
+            t = Thread(target=self.listen_client, args=(user,))
+            t.daemon = True
+            t.start()
 
-          self.user_id += 1
+            self.user_id += 1
 
     def send_messages(self):
         while True:
@@ -54,13 +53,13 @@ class Server:
                 msg = self.msg_queue.get()
                 print(msg)
                 with self.clients_lock:
-                  for id, user in self.clients.items():
-                      user.send(msg)
+                    for id, user in self.clients.items():
+                        user.send(msg)
                 if self.first_messages:
-                  sleep(0.1) # waiting for message to arrive
+                    sleep(0.1)  # waiting for message to arrive
                 if self.msg_queue.empty():
-                  self.first_messages = False
-    
+                    self.first_messages = False
+
     def listen_client(self, user):
         msg = user.listen()
         msg = msg.split("-")
@@ -79,30 +78,26 @@ class Server:
         user.listen()
 
         with self.clients_lock:
-          self.clients[int(user.id)] = user
+            self.clients[int(user.id)] = user
         # update the minimum of clients condition
         self.number_clients += 1
         if self.n_arg and self.number_clients >= self.required_clients:
             self.enough_clients = True
-        # with self.queue_lock: 
+        # with self.queue_lock:
         self.msg_queue.put(f"1-{user.id};{user.ip};{user.name}")
-        
+
         while True:
             msg = user.listen()
             if msg == "":
-              id, msg = "k", ""
+                id, msg = "k", ""
             else:
-              id, msg = process_message(msg)
+                id, msg = process_message(msg)
             if id == "0":
-                  print("en colando")
-                  self.msg_queue.put("0-" + msg)
+                print("en colando")
+                self.msg_queue.put("0-" + msg)
             elif id == "k":
                 with self.clients_lock:
-                  del self.clients[int(user.id)]
-                  self.msg_queue.put(f"k-{user.id}-{user.name} ha salido del chat")
-                  self.number_clients -= 1
-                  break
-                
-
-
-
+                    del self.clients[int(user.id)]
+                    self.msg_queue.put(f"k-{user.id}-{user.name} ha salido del chat")
+                    self.number_clients -= 1
+                    break
