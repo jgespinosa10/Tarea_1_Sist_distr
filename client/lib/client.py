@@ -4,9 +4,12 @@
 import socket
 from datetime import datetime
 from threading import Thread
+from colorama import Fore
 from lib.helpers import process_input, prepare_message, process_message, print_users, process_input_with_commands
+from lib.helpers import COLORS
 from lib.p2p import P2P
 from lib.commands import COMMANDS
+import random
 import json
 
 
@@ -17,6 +20,8 @@ class Client:
         self.server_alive = True
         self.users = dict()
         self.id = None
+
+        self.color = random.choice(COLORS)
 
         # Connect to server and send information
         # initialize TCP socket

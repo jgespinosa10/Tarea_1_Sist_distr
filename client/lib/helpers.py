@@ -1,5 +1,14 @@
 from datetime import datetime
+from colorama import init, Fore
 
+init()
+
+COLORS = [
+    Fore.BLUE, Fore.CYAN, Fore.GREEN, Fore.LIGHTBLACK_EX, 
+    Fore.LIGHTBLUE_EX, Fore.LIGHTCYAN_EX, Fore.LIGHTGREEN_EX, 
+    Fore.LIGHTMAGENTA_EX, Fore.LIGHTRED_EX, Fore.LIGHTWHITE_EX, 
+    Fore.LIGHTYELLOW_EX, Fore.MAGENTA, Fore.RED, Fore.WHITE, Fore.YELLOW
+]
 
 def process_input(msg):
     msg = msg.split(":")
@@ -10,11 +19,11 @@ def process_input(msg):
 
 def prepare_message(user, msg, private=False):
     date_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    metadata = f"0-[{date_now}] {user.name}"
+    metadata = f"[{date_now}] {user.name}"
     if private:
         metadata += " (private)"
     metadata += ": "
-    msg = f"{metadata}{msg}"
+    msg = f"0-{user.color}{metadata}{msg}{Fore.RESET}"
     return msg
 
 
