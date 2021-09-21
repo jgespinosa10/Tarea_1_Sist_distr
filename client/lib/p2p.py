@@ -54,7 +54,7 @@ class P2P:
                 msg = msg.split('-')
                 msg = "-".join(msg[1:])
                 print(msg)
-            except KeyboardInterrupt:
+            except ConnectionResetError:
                 break
 
     def pm(self, id, msg):

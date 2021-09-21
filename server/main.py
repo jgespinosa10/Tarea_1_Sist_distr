@@ -20,6 +20,15 @@ if __name__ == "__main__":
     print("URL:", ssh_tunnel.public_url.split('/')[-1].split(':')[0])
     print("PORT:", ssh_tunnel.public_url.split(':')[-1])
 
+
+    ########################
+    ###  Development run ###
+    ########################
+    # Lo que hace es escribir en un archivo la IP y el puerto para que los clientes lean esa IP y puerto de ese archivo
+    # with open("../conection.txt", "w") as file:
+    #     file.write(ssh_tunnel.public_url.split('/')[-1].split(':')[0]+"\n")
+    #     file.write(ssh_tunnel.public_url.split(':')[-1])
+
     try:
         server.run()
     except KeyboardInterrupt:
