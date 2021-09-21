@@ -4,8 +4,9 @@
 import socket
 from datetime import datetime
 from threading import Thread
-from lib.helpers import process_input, prepare_message, process_message, print_users
+from lib.helpers import process_input, prepare_message, process_message, print_users, process_input_with_commands
 from lib.p2p import P2P
+from lib.commands import COMMANDS
 import json
 
 
@@ -30,6 +31,11 @@ class Client:
         # prompt the client for a name
         self.name = input("Enter your name: ")
         print(f"Hola {self.name}, bienvenid@ al chat!")
+        print(
+            "Escribe un mensaje y presiona Enter para enviar. Utiliza el comando /help para",
+            "mostrar la ayuda.",
+            sep="\n"
+        )
 
         self.p2p = P2P(self)
         self.port = self.p2p.port
@@ -51,27 +57,14 @@ class Client:
     def run(self):
         while True:
             try:
-                msg = input("".join([
-                    "Menú:\n",
-                    "-1. Salir del chat\n",
-                    " 0. Enviar a todos\n",
-                    print_users(self),
-                    "Escribe de la siguiente forma: {id}: {mensaje}\n\n"
-                ]))
+                msg = input()
+
                 if not self.server_alive:
                     break
 
-                id, msg = process_input(msg)
+                # Revisa si ingresó comandos y procesa la acción que corresponde
+                self.process_chat_commands(msg)
 
-                if id == "-1":
-                    raise KeyboardInterrupt
-                elif id == "0":
-                    self.send(prepare_message(self, msg))
-                elif id in self.users:
-                    self.p2p.pm(id, prepare_message(self, msg, private=True))
-
-                else:
-                    print("Elige un id válido")
             except KeyboardInterrupt:
                 print("cerrando...")
                 self.send("k-dead")
@@ -79,6 +72,44 @@ class Client:
                 self.p2p.die()
 
                 raise KeyboardInterrupt
+
+
+    def process_chat_commands(self, msg_input):
+
+        command, msg = process_input_with_commands(msg_input)
+
+        # Caso help: imprime la lista de comandos
+        if command == "/help":
+
+            for com, text in COMMANDS.items():
+                print(f"  /{com:20}{text}")
+
+        # Caso users: imprime los usuarios
+        elif command == "/users":
+            print(print_users(self))
+
+        # Caso to: envía un mensaje privado
+        elif command == "/to":
+
+            # Split separa el id del destinatario y el mensaje
+            msg_split = msg.split(" ", maxsplit=1)
+
+            if len(msg_split) == 2 and msg_split[0] in self.users:
+                uid = msg_split[0]
+                msg = msg_split[1]
+
+                self.p2p.pm(uid, prepare_message(self, msg, private=True))
+            else:
+                print("Opción no válida")
+
+        # Caso exit: sale del chat
+        elif command == "/exit":
+            raise KeyboardInterrupt
+
+        # Caso default: Si no se ingresa un comando, se envia el mensaje original a todos
+        elif msg_input.strip() != "":
+            self.send(prepare_message(self, msg_input))
+
 
     def send(self, msg):
         try:
