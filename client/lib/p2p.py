@@ -45,31 +45,30 @@ class P2P:
         return msg
 
     def listen_loop(self, skt):
-        while True:
-            try:
-                msg = self.listen(skt)
-                if msg == "":
-                    skt.close()
-                    break
-                msg = msg.split('-')
-                msg = "-".join(msg[1:])
-                print(msg)
-            except ConnectionResetError:
-                break
+        try:
+            msg = self.listen(skt)
+            if msg == "":
+                skt.close()
+                return
+            msg = msg.split('-')
+            msg = "-".join(msg[1:])
+            print(msg)
+
+        except ConnectionResetError:
+            skt.close()
+            return
+        
+        skt.close()
+        return
 
     def pm(self, id, msg):
-        if 'socket' not in self.peer(id):
-            skt = socket.socket()
-            skt.connect(process_ip(self.peer(id)['ip']))
-            self.peer(id)['socket'] = skt
+        skt = socket.socket()
+        skt.connect(process_ip(self.peer(id)['ip']))
+        self.peer(id)['socket'] = skt
 
-            self.send(skt, str(self.user.id))
-            self.listen(skt)
-
-            t = Thread(target=self.listen_loop, args=(skt,))
-            t.deamon = True
-            t.start()
-
+        self.send(skt, str(self.user.id))
+        self.listen(skt)
+        print(msg)
         self.send(self.peer(id)['socket'], msg)
 
     def die(self):

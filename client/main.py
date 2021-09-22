@@ -19,6 +19,8 @@ if __name__ == "__main__":
         # break
 
         #######################
+
+        #######################
         ###  Production run ###
         #######################
         SERVER_HOST = input("Indicate server URL: ")
@@ -29,6 +31,8 @@ if __name__ == "__main__":
             break
         except Exception as e:
             print("Please check URL and PORT")
+
+        ######################
 
     try:
         client.run()
