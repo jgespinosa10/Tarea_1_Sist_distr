@@ -3,6 +3,7 @@ from queue import Queue
 from threading import Thread, Lock
 from lib.user import User
 from lib.helpers import process_message
+import random
 import json
 from time import sleep
 
@@ -30,11 +31,16 @@ class Server:
         self.queue_thread = Thread(target=self.send_messages)
         self.queue_thread.daemon = True
 
+        self.server = True
+        self.timer = Thread(target=self.change_server)
+        self.timer.daemon = True
+
     def run(self):
         self.s.listen()
         print(f"[*] Listening as {self.SERVER_HOST}:{self.SERVER_PORT}")
 
         self.queue_thread.start()
+        self.timer.start()
 
         while True:
             client_socket, _ = self.s.accept()
@@ -101,3 +107,12 @@ class Server:
                     self.msg_queue.put(f"k-{user.id}-{user.name} ha salido del chat")
                     self.number_clients -= 1
                     break
+    
+    def change_server(self):
+        while self.server:
+            sleep(30)
+            if self.number_clients > 0:
+                user = random.choice(list(self.clients.values()))
+                print(f"cambiando de server a {user.name}")
+                self.server = False
+
