@@ -82,6 +82,9 @@ def process_chat_commands(client, msg_input):
 
     # Caso to: envía un mensaje privado
     elif command == "/to":
+        if not client.server_started:
+          print("El servidor todavía no comienza, no puedes mandar mensajes privados")
+          return
 
         # Split separa el id del destinatario y el mensaje
         msg_split = msg.split(" ", maxsplit=1)

@@ -17,6 +17,7 @@ class Client:
         self.SERVER_HOST = SERVER_HOST
         self.SERVER_PORT = SERVER_PORT
         self.server_alive = True
+        self.server_started = False
         self.users = dict()
         self.id = None
 
@@ -99,6 +100,7 @@ class Client:
             if msg == "":
                 print("server shutting down")
                 break
+            self.server_alive = True
             id, msg = process_message(msg)
 
             if id == "0":
