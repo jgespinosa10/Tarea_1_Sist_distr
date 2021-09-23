@@ -5,10 +5,9 @@ import socket
 from datetime import datetime
 from threading import Thread
 from colorama import Fore
-from lib.helpers import process_input, prepare_message, process_message, print_users, process_input_with_commands
+from lib.helpers import process_input, prepare_message, process_message, print_users, process_input_with_commands, process_chat_commands
 from lib.helpers import COLORS
 from lib.p2p import P2P
-from lib.commands import COMMANDS
 import random
 import json
 
@@ -68,7 +67,7 @@ class Client:
                     break
 
                 # Revisa si ingresó comandos y procesa la acción que corresponde
-                self.process_chat_commands(msg)
+                process_chat_commands(self, msg)
 
             except KeyboardInterrupt:
                 print("cerrando...")
@@ -77,43 +76,6 @@ class Client:
                 self.p2p.die()
 
                 raise KeyboardInterrupt
-
-
-    def process_chat_commands(self, msg_input):
-
-        command, msg = process_input_with_commands(msg_input)
-
-        # Caso help: imprime la lista de comandos
-        if command == "/help":
-
-            for com, text in COMMANDS.items():
-                print(f"  /{com:20}{text}")
-
-        # Caso users: imprime los usuarios
-        elif command == "/users":
-            print(print_users(self))
-
-        # Caso to: envía un mensaje privado
-        elif command == "/to":
-
-            # Split separa el id del destinatario y el mensaje
-            msg_split = msg.split(" ", maxsplit=1)
-
-            if len(msg_split) == 2 and msg_split[0] in self.users:
-                uid = msg_split[0]
-                msg = msg_split[1]
-
-                self.p2p.pm(uid, prepare_message(self, msg, private=True))
-            else:
-                print("Opción no válida")
-
-        # Caso exit: sale del chat
-        elif command == "/exit":
-            raise KeyboardInterrupt
-
-        # Caso default: Si no se ingresa un comando, se envia el mensaje original a todos
-        elif msg_input.strip() != "":
-            self.send(prepare_message(self, msg_input))
 
 
     def send(self, msg):

@@ -1,5 +1,7 @@
 from datetime import datetime
 from colorama import init, Fore
+from lib.commands import COMMANDS
+
 
 init()
 
@@ -63,3 +65,39 @@ def process_input_with_commands(msg):
 
     else:
         return "", msg
+
+def process_chat_commands(client, msg_input):
+
+    command, msg = process_input_with_commands(msg_input)
+
+    # Caso help: imprime la lista de comandos
+    if command == "/help":
+
+        for com, text in COMMANDS.items():
+            print(f"  /{com:20}{text}")
+
+    # Caso users: imprime los usuarios
+    elif command == "/users":
+        print(print_users(client))
+
+    # Caso to: envía un mensaje privado
+    elif command == "/to":
+
+        # Split separa el id del destinatario y el mensaje
+        msg_split = msg.split(" ", maxsplit=1)
+
+        if len(msg_split) == 2 and msg_split[0] in client.users:
+            uid = msg_split[0]
+            msg = msg_split[1]
+
+            client.p2p.pm(uid, prepare_message(client, msg, private=True))
+        else:
+            print("Opción no válida")
+
+    # Caso exit: sale del chat
+    elif command == "/exit":
+        raise KeyboardInterrupt
+
+    # Caso default: Si no se ingresa un comando, se envia el mensaje original a todos
+    elif msg_input.strip() != "":
+        client.send(prepare_message(client, msg_input))
