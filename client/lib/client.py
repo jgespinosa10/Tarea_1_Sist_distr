@@ -116,3 +116,6 @@ class Client:
                 msg = "-".join(msg[1:])
                 del self.users[id]
                 print(msg)
+            elif id == "server":
+                print("voy a ser server!!")
+                # falta la recepción del estado del proceso

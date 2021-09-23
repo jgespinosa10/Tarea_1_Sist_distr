@@ -113,6 +113,9 @@ class Server:
             sleep(30)
             if self.number_clients > 0:
                 user = random.choice(list(self.clients.values()))
+                user.send("server-_")
                 print(f"cambiando de server a {user.name}")
+
+                # falta toda la lógica del traspaso del estado del proceso
                 self.server = False
 
