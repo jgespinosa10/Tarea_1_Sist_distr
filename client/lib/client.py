@@ -8,6 +8,7 @@ from colorama import Fore
 from lib.helpers import process_input, prepare_message, process_message, print_users, process_input_with_commands, process_chat_commands
 from lib.helpers import COLORS
 from lib.p2p import P2P
+from lib.sub_server import SubServer
 import random
 import json
 
@@ -20,6 +21,8 @@ class Client:
         self.server_started = False
         self.users = dict()
         self.id = None
+        self.is_server = False
+        self.server_id = None
 
         self.color = random.choice(COLORS)
 
@@ -80,13 +83,18 @@ class Client:
 
 
     def send(self, msg):
-        try:
-            self.write = self.cs.makefile('w')
-            with self.write:
-                self.write.write(msg + '\n')
-                self.write.flush()
-        except BrokenPipeError:
-            self.server_alive = False
+        if self.server_id is None and not self.is_server:
+          try:
+              self.write = self.cs.makefile('w')
+              with self.write:
+                  self.write.write(msg + '\n')
+                  self.write.flush()
+          except BrokenPipeError:
+              self.server_alive = False
+        elif self.is_server:
+          self.server.msg_queue.put(msg)
+        else:
+          self.p2p.pm(self.server_id, msg)
 
     def listen(self):
         self.read = self.cs.makefile('r')
@@ -117,5 +125,8 @@ class Client:
                 del self.users[id]
                 print(msg)
             elif id == "server":
+                info = json.loads(msg)
+                self.server = SubServer(info, self.users, self.p2p, self)
+                self.is_server = True
                 print("voy a ser server!!")
                 # falta la recepción del estado del proceso

@@ -113,9 +113,20 @@ class Server:
             sleep(30)
             if self.number_clients > 0:
                 user = random.choice(list(self.clients.values()))
-                user.send("server-_")
+                self.server = False
+
+                info = {}
+                info['first_messages'] = self.first_messages
+                info['number_clients'] = self.number_clients
+                info['n_arg'] = self.n_arg
+                info['required_clients'] = self.required_clients
+                info['queue'] = list(self.msg_queue.queue)
+                info['user_id'] = self.user_id
+                info['enough_clients'] = self.enough_clients
+                
+
+                user.send("server-" + json.dumps(info))
                 print(f"cambiando de server a {user.name}")
 
-                # falta toda la lógica del traspaso del estado del proceso
-                self.server = False
+                
 

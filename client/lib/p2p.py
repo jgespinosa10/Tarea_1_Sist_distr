@@ -1,5 +1,5 @@
 from threading import Thread
-from lib.helpers import process_ip
+from lib.helpers import process_ip, process_message
 from colorama import Fore
 import socket
 
@@ -50,9 +50,15 @@ class P2P:
             if msg == "":
                 skt.close()
                 return
-            msg = msg.split('-')
-            msg = "-".join(msg[1:])
-            print(msg)
+            id, msg = process_message(msg)
+            if id == "new_server":
+              self.user.server_id = msg
+              print("cambiando de server!")
+            elif id == "0" and self.user.is_server:
+              self.user.server.msg_queue.put(msg)
+            elif id == "0":
+              print(msg)
+
 
         except ConnectionResetError:
             skt.close()
