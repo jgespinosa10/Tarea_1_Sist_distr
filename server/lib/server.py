@@ -110,7 +110,7 @@ class Server:
     
     def change_server(self):
         while self.server:
-            sleep(15)
+            sleep(30)
             if self.number_clients > 0:
                 user = random.choice(list(self.clients.values()))
                 self.server = False

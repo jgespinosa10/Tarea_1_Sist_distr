@@ -141,7 +141,7 @@ class Client:
 
     def change_server(self):
         while self.is_server:
-            sleep(15)
+            sleep(30)
             if self.server.number_clients > 0:
                 user = random.choice(list(self.users))
                 self.is_server = False
