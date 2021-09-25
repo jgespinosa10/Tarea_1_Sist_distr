@@ -9,6 +9,7 @@ from lib.helpers import process_input, prepare_message, process_message, print_u
 from lib.helpers import COLORS
 from lib.p2p import P2P
 from lib.sub_server import SubServer
+from time import sleep
 import random
 import json
 
@@ -107,8 +108,9 @@ class Client:
             msg = self.listen()
             if msg == "":
                 print("server shutting down")
+                self.server_alive = False
                 break
-            self.server_alive = True
+            self.server_started = True
             id, msg = process_message(msg)
 
             if id == "0":
@@ -125,8 +127,34 @@ class Client:
                 del self.users[id]
                 print(msg)
             elif id == "server":
-                info = json.loads(msg)
-                self.server = SubServer(info, self.users, self.p2p, self)
-                self.is_server = True
-                print("voy a ser server!!")
+                self.become_server(msg)
                 # falta la recepción del estado del proceso
+
+    def become_server(self, msg):
+      info = json.loads(msg)
+      self.server = SubServer(info, self.users, self.p2p, self)
+      self.is_server = True
+      print("voy a ser server!!")
+      self.timer = Thread(target=self.change_server)
+      self.timer.daemon = True
+      self.timer.start()
+
+    def change_server(self):
+        while self.is_server:
+            sleep(15)
+            if self.server.number_clients > 0:
+                user = random.choice(list(self.users))
+                self.is_server = False
+
+                info = {}
+                info['first_messages'] = self.server.first_messages
+                info['number_clients'] = self.server.number_clients
+                info['n_arg'] = self.server.n_arg
+                info['required_clients'] = self.server.required_clients
+                info['queue'] = list(self.server.msg_queue.queue)
+                info['user_id'] = self.server.user_id
+                info['enough_clients'] = self.server.enough_clients
+                
+
+                self.p2p.pm(user, "server-" + json.dumps(info))
+                print(f"cambiando de server a {self.users[user]['name']}")

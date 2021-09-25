@@ -54,6 +54,8 @@ class P2P:
             if id == "new_server":
               self.user.server_id = msg
               print("cambiando de server!")
+            elif id == "server":
+              self.user.become_server(msg)
             elif id == "0" and self.user.is_server:
               self.user.server.msg_queue.put(msg)
             elif id == "0":
@@ -74,7 +76,8 @@ class P2P:
 
         self.send(skt, str(self.user.id))
         self.listen(skt)
-        print(msg)
+        if (msg[:2] == '0-'):
+          print(msg)
         self.send(self.peer(id)['socket'], msg)
 
     def die(self):
