@@ -76,7 +76,7 @@ class P2P:
 
         self.send(skt, str(self.user.id))
         self.listen(skt)
-        if (msg[:2] == '0-'):
+        if (msg.split('-')[0] not in ['server', 'new-server']):
           print(msg)
         self.send(self.peer(id)['socket'], msg)
 
