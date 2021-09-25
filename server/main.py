@@ -5,14 +5,14 @@ from lib.token import NGROK_TOKEN
 from pyngrok import ngrok
 
 if __name__ == "__main__":
-    # recibimos los posibles argumentos utilizados al iniciar el servidor 
+    # recibimos los posibles argumentos utilizados al iniciar el servidor
     n_clients, n_arg = process_args()
     # server's IP address
     SERVER_HOST = "0.0.0.0"
-    SERVER_PORT = 5002 # port we want to use
+    SERVER_PORT = 5002  # port we want to use
     server = Server(n_clients, n_arg, SERVER_HOST, SERVER_PORT)
 
-    ### Set up an ngrok tunnel to connect a public URL to localhost
+    # ## Set up an ngrok tunnel to connect a public URL to localhost
     # Seteamos al token de ngrok utilizaremos
     ngrok.set_auth_token(NGROK_TOKEN)
     # Creamos el ssh tunnel para poder recibir una URL y puerto a utilizar, estos quedan en las variables descritas a continuación
@@ -20,8 +20,19 @@ if __name__ == "__main__":
     print("URL:", ssh_tunnel.public_url.split('/')[-1].split(':')[0])
     print("PORT:", ssh_tunnel.public_url.split(':')[-1])
 
+
+    ########################
+    ###  Development run ###
+    ########################
+    # Lo que hace es escribir en un archivo la IP y el puerto para que los clientes lean esa IP y puerto de ese archivo
+    with open("../conection.txt", "w") as file:
+        file.write(ssh_tunnel.public_url.split('/')[-1].split(':')[0]+"\n")
+        file.write(ssh_tunnel.public_url.split(':')[-1])
+
+    #######################
+
     try:
-      server.run()
+        server.run()
     except KeyboardInterrupt:
-      print("Shutting down server...")
+        print("Shutting down server...")
     ngrok.kill()

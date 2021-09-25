@@ -129,3 +129,5 @@ dmypy.json
 
 # ngrok token
 server/lib/token.py
+
+conection.txt

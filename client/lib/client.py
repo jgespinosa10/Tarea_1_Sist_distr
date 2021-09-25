@@ -4,17 +4,27 @@
 import socket
 from datetime import datetime
 from threading import Thread
-from lib.helpers import process_input, prepare_message, process_message, print_users
+from colorama import Fore
+from lib.helpers import process_input, prepare_message, process_message, print_users, process_input_with_commands, process_chat_commands
+from lib.helpers import COLORS
 from lib.p2p import P2P
+from lib.sub_server import SubServer
+import random
 import json
+
 
 class Client:
     def __init__(self, SERVER_HOST, SERVER_PORT):
         self.SERVER_HOST = SERVER_HOST
         self.SERVER_PORT = SERVER_PORT
         self.server_alive = True
+        self.server_started = False
         self.users = dict()
         self.id = None
+        self.is_server = False
+        self.server_id = None
+
+        self.color = random.choice(COLORS)
 
         # Connect to server and send information
         # initialize TCP socket
@@ -29,6 +39,11 @@ class Client:
         # prompt the client for a name
         self.name = input("Enter your name: ")
         print(f"Hola {self.name}, bienvenid@ al chat!")
+        print(
+            "Escribe un mensaje y presiona Enter para enviar. Utiliza el comando /help para",
+            "mostrar la ayuda.",
+            sep="\n"
+        )
 
         self.p2p = P2P(self)
         self.port = self.p2p.port
@@ -41,7 +56,6 @@ class Client:
         self.id = self.users['self']
         del self.users['self']
 
-  
         # make a thread that listens for messages to this client & print them
         t = Thread(target=self.listen_loop)
         # make the thread daemon so it ends whenever the main thread ends
@@ -49,73 +63,70 @@ class Client:
         t.start()
 
     def run(self):
-      while True:
-          try:
-              msg =  input("".join([
-                  "Menú:\n",
-                  "-1. Salir del chat\n",
-                  " 0. Enviar a todos\n",
-                  print_users(self),
-                  "Escribe de la siguiente forma: {id}: {mensaje}\n\n"
-                ]))
-              if not self.server_alive:
-                break
+        while True:
+            try:
+                msg = input()
 
-              id, msg = process_input(msg)
+                if not self.server_alive:
+                    break
 
-              if id == "-1":
-                  raise KeyboardInterrupt
-              elif id == "0":
-                  self.send(prepare_message(self, msg))
-              elif id in self.users:             
-                  self.p2p.pm(id, prepare_message(self, msg, private=True))
+                # Revisa si ingresó comandos y procesa la acción que corresponde
+                process_chat_commands(self, msg)
 
-              else:
-                  print("Elige un id válido")
-          except KeyboardInterrupt:
-              print("cerrando...")
-              self.send("k-dead")
+            except KeyboardInterrupt:
+                print("cerrando...")
+                self.send("k-dead")
 
-              self.p2p.die()
+                self.p2p.die()
 
-              raise KeyboardInterrupt
+                raise KeyboardInterrupt
 
-    
+
     def send(self, msg):
-      try:
-        self.write = self.cs.makefile('w')
-        with self.write:
-          self.write.write(msg + '\n')
-          self.write.flush()
-      except BrokenPipeError:
-        self.server_alive = False
-    
-    def listen(self):
-      self.read = self.cs.makefile('r')
-      with self.read:
-        msg = self.read.readline().strip()
-      return msg
-    
-    def listen_loop(self):
-      while self.server_alive:
-        msg = self.listen()
-        if msg == "":
-          print("server shutting down")
-          break
-        id, msg = process_message(msg)
+        if self.server_id is None and not self.is_server:
+          try:
+              self.write = self.cs.makefile('w')
+              with self.write:
+                  self.write.write(msg + '\n')
+                  self.write.flush()
+          except BrokenPipeError:
+              self.server_alive = False
+        elif self.is_server:
+          self.server.msg_queue.put(msg)
+        else:
+          self.p2p.pm(self.server_id, msg)
 
-        if id == "0":
-            print(msg)
-        elif id == "1":
-            user = msg.split(";")
-            if int(self.id) != int(user[0]):
-              self.users[user[0]] = {'id': user[0], 'name': user[2], 'ip': user[1]}
-            print(f"¡{user[0]}: {user[2]} ha entrado a la sala!\n")
-        elif id == "k":
-            msg = msg.split('-')
-            id = msg[0]
-            msg = "-".join(msg[1:])
-            del self.users[id]
-            print(msg)
-            
- 
+    def listen(self):
+        self.read = self.cs.makefile('r')
+        with self.read:
+            msg = self.read.readline().strip()
+        return msg
+
+    def listen_loop(self):
+        while self.server_alive:
+            msg = self.listen()
+            if msg == "":
+                print("server shutting down")
+                break
+            self.server_alive = True
+            id, msg = process_message(msg)
+
+            if id == "0":
+                print(msg)
+            elif id == "1":
+                user = msg.split(";")
+                if int(self.id) != int(user[0]):
+                    self.users[user[0]] = {'id': user[0], 'name': user[2], 'ip': user[1]}
+                print(f"¡{user[0]}: {user[2]} ha entrado a la sala!\n")
+            elif id == "k":
+                msg = msg.split('-')
+                id = msg[0]
+                msg = "-".join(msg[1:])
+                del self.users[id]
+                print(msg)
+            elif id == "server":
+                info = json.loads(msg)
+                self.server = SubServer(info, self.users, self.p2p, self)
+                self.is_server = True
+                print("voy a ser server!!")
+                # falta la recepción del estado del proceso
