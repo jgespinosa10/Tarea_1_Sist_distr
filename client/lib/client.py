@@ -95,7 +95,7 @@ class Client:
         elif self.is_server:
           self.server.msg_queue.put(msg)
         else:
-          self.p2p.pm(self.server_id, msg)
+          self.p2p.pm(self.server_id, '0-' + msg)
 
     def listen(self):
         self.read = self.cs.makefile('r')
