@@ -74,8 +74,6 @@ donde N es la cantidad de clientes que se deben conectar para poder mostrar los 
 
 **La primera vez corriendo el servidor, se va a descargar `ngrok`.**
 
-<br>
-
 ### Cliente
 
 Abrimos la terminal en la raiz del repositorio y ejectamos lo siguiente:
