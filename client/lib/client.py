@@ -82,20 +82,20 @@ class Client:
 
                 raise KeyboardInterrupt
 
-
     def send(self, msg):
         if self.server_id is None and not self.is_server:
-          try:
-              self.write = self.cs.makefile('w')
-              with self.write:
-                  self.write.write(msg + '\n')
-                  self.write.flush()
-          except BrokenPipeError:
-              self.server_alive = False
+            try:
+                self.write = self.cs.makefile('w')
+                with self.write:
+                    self.write.write(msg + '\n')
+                    self.write.flush()
+            except BrokenPipeError:
+                self.server_alive = False
         elif self.is_server:
-          self.server.msg_queue.put(msg)
+            print(msg[2:])
+            self.server.msg_queue.put(msg)
         else:
-          self.p2p.pm(self.server_id, '0-' + msg)
+            self.p2p.pm(self.server_id, msg)
 
     def listen(self):
         self.read = self.cs.makefile('r')
@@ -118,7 +118,8 @@ class Client:
             elif id == "1":
                 user = msg.split(";")
                 if int(self.id) != int(user[0]):
-                    self.users[user[0]] = {'id': user[0], 'name': user[2], 'ip': user[1]}
+                    self.users[user[0]] = {'id': user[0],
+                                           'name': user[2], 'ip': user[1]}
                 print(f"¡{user[0]}: {user[2]} ha entrado a la sala!\n")
             elif id == "k":
                 msg = msg.split('-')
@@ -131,13 +132,13 @@ class Client:
                 # falta la recepción del estado del proceso
 
     def become_server(self, msg):
-      info = json.loads(msg)
-      self.server = SubServer(info, self.users, self.p2p, self)
-      self.is_server = True
-      print("voy a ser server!!")
-      self.timer = Thread(target=self.change_server)
-      self.timer.daemon = True
-      self.timer.start()
+        info = json.loads(msg)
+        self.server = SubServer(info, self.users, self.p2p, self)
+        self.is_server = True
+        print("voy a ser server!!")
+        self.timer = Thread(target=self.change_server)
+        self.timer.daemon = True
+        self.timer.start()
 
     def change_server(self):
         while self.is_server:
@@ -154,7 +155,6 @@ class Client:
                 info['queue'] = list(self.server.msg_queue.queue)
                 info['user_id'] = self.server.user_id
                 info['enough_clients'] = self.server.enough_clients
-                
 
                 self.p2p.pm(user, "server-" + json.dumps(info))
                 print(f"cambiando de server a {self.users[user]['name']}")
