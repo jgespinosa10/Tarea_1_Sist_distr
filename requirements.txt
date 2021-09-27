@@ -1,3 +1,2 @@
-sockets
 colorama
 pyngrok
