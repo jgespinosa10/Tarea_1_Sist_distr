@@ -110,6 +110,7 @@ class Client:
             if msg == "":
                 print("server shutting down")
                 self.original_server_alive = False
+                self.server_alive = False
                 break
             self.server_started = True
             id, msg = process_message(msg)

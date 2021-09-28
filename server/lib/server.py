@@ -97,25 +97,29 @@ class Server:
             print("redirigiendo al nuevo cliente al servidor actual")
             user.send("new_server-" + self.server_id)
 
-        while True:
-            msg = user.listen()
-            if msg == "":
-                id, msg = "k", ""
-            else:
-                id, msg = process_message(msg)
-            if id == "0":
-                print("en colando")
-                self.msg_queue.put("0-" + msg)
-            elif id == "k":
-                with self.clients_lock:
-                    del self.clients[int(user.id)]
-                    self.msg_queue.put(
-                        f"k-{user.id}-{user.name} ha salido del chat")
-                    self.number_clients -= 1
-                    break
-            elif id == "new_server":
-                print(f"el nuevo server es id: {msg}")
-                self.server_id = msg
+        try: 
+            while True:
+                msg = user.listen()
+                if msg == "":
+                    id, msg = "k", ""
+                else:
+                    id, msg = process_message(msg)
+                if id == "0":
+                    print("en colando")
+                    self.msg_queue.put("0-" + msg)
+                elif id == "k":
+                    with self.clients_lock:
+                        del self.clients[int(user.id)]
+                        self.msg_queue.put(
+                            f"k-{user.id}-{user.name} ha salido del chat")
+                        self.number_clients -= 1
+                        break
+                elif id == "new_server":
+                    print(f"el nuevo server es id: {msg}")
+                    self.server_id = msg
+
+        except ConnectionResetError:
+            pass
 
     def change_server(self):
         while self.server:
