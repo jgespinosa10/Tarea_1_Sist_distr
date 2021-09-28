@@ -1,6 +1,8 @@
 import sys
 
 # Función que recibe los argumentos de la linea de comando
+
+
 def process_args():
     n_clients = 1
     n_arg = False

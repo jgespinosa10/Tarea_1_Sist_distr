@@ -6,11 +6,12 @@ from lib.commands import COMMANDS
 init()
 
 COLORS = [
-    Fore.BLUE, Fore.CYAN, Fore.GREEN, Fore.LIGHTBLACK_EX, 
-    Fore.LIGHTBLUE_EX, Fore.LIGHTCYAN_EX, Fore.LIGHTGREEN_EX, 
-    Fore.LIGHTMAGENTA_EX, Fore.LIGHTRED_EX, Fore.LIGHTWHITE_EX, 
+    Fore.BLUE, Fore.CYAN, Fore.GREEN, Fore.LIGHTBLACK_EX,
+    Fore.LIGHTBLUE_EX, Fore.LIGHTCYAN_EX, Fore.LIGHTGREEN_EX,
+    Fore.LIGHTMAGENTA_EX, Fore.LIGHTRED_EX, Fore.LIGHTWHITE_EX,
     Fore.LIGHTYELLOW_EX, Fore.MAGENTA, Fore.RED, Fore.WHITE, Fore.YELLOW
 ]
+
 
 def process_input(msg):
     msg = msg.split(":")
@@ -66,6 +67,7 @@ def process_input_with_commands(msg):
     else:
         return "", msg
 
+
 def process_chat_commands(client, msg_input):
 
     command, msg = process_input_with_commands(msg_input)
@@ -83,8 +85,8 @@ def process_chat_commands(client, msg_input):
     # Caso to: envía un mensaje privado
     elif command == "/to":
         if not client.server_started:
-          print("El servidor todavía no comienza, no puedes mandar mensajes privados")
-          return
+            print("El servidor todavía no comienza, no puedes mandar mensajes privados")
+            return
 
         # Split separa el id del destinatario y el mensaje
         msg_split = msg.split(" ", maxsplit=1)
@@ -93,7 +95,9 @@ def process_chat_commands(client, msg_input):
             uid = msg_split[0]
             msg = msg_split[1]
 
-            client.p2p.pm(uid, prepare_message(client, msg, private=True))
+            msg = prepare_message(client, msg, private=True)
+            print(msg[2:])
+            client.p2p.pm(uid, msg)
         else:
             print("Opción no válida")
 

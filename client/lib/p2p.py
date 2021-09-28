@@ -52,18 +52,20 @@ class P2P:
                 return
             id, msg = process_message(msg)
             if id == "new_server":
-              self.user.server_id = msg
-              print("cambiando de server!")
+                self.user.server_id = msg
+                print("cambiando de server!")
+            elif id == "server":
+                self.user.become_server(msg)
             elif id == "0" and self.user.is_server:
-              self.user.server.msg_queue.put(msg)
+                print(msg)
+                self.user.server.msg_queue.put(id + '-' + msg)
             elif id == "0":
-              print(msg)
-
+                print(msg)
 
         except ConnectionResetError:
             skt.close()
             return
-        
+
         skt.close()
         return
 
@@ -74,7 +76,6 @@ class P2P:
 
         self.send(skt, str(self.user.id))
         self.listen(skt)
-        print(msg)
         self.send(self.peer(id)['socket'], msg)
 
     def die(self):

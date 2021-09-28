@@ -20,7 +20,6 @@ if __name__ == "__main__":
     print("URL:", ssh_tunnel.public_url.split('/')[-1].split(':')[0])
     print("PORT:", ssh_tunnel.public_url.split(':')[-1])
 
-
     ########################
     ###  Development run ###
     ########################
