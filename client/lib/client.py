@@ -130,6 +130,8 @@ class Client:
             elif id == "server":
                 self.become_server(msg)
                 # falta la recepción del estado del proceso
+            elif id == "new_server":
+                self.server_id = msg
 
     def become_server(self, msg):
         info = json.loads(msg)

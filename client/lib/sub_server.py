@@ -26,6 +26,12 @@ class SubServer:
         self.queue_thread.start()
 
     def broadcast(self, msg):
+        # informa al servidor original que es el servidor actual
+        self.client.write = self.client.cs.makefile('w')
+        with self.client.write:
+            self.client.write.write(msg + '\n')
+            self.client.write.flush()
+
         for id, user in self.users.items():
             self.p2p.pm(id, msg)
 
