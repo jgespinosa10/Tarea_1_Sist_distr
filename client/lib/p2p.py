@@ -56,7 +56,7 @@ class P2P:
                 print("cambiando de server!")
             elif id == "server":
                 self.user.become_server(msg)
-            elif id == "0" and self.user.is_server:
+            elif id == "0" and self.user.is_server:  # No enviar si es privado
                 print(msg)
                 self.user.server.msg_queue.put(id + '-' + msg)
             elif id == "0":

@@ -20,6 +20,7 @@ class Server:
         self.msg_queue = Queue()
         self.clients_lock = Lock()
         self.user_id = 1
+        self.server_id = None
 
         self.clients = {}
 
@@ -92,6 +93,10 @@ class Server:
         # with self.queue_lock:
         self.msg_queue.put(f"1-{user.id};{user.ip};{user.name}")
 
+        if not self.server_id is None:
+            print("redirigiendo al nuevo cliente al servidor actual")
+            user.send("new_server-" + self.server_id)
+
         while True:
             msg = user.listen()
             if msg == "":
@@ -108,10 +113,14 @@ class Server:
                         f"k-{user.id}-{user.name} ha salido del chat")
                     self.number_clients -= 1
                     break
+            elif id == "new_server":
+                print(f"el nuevo server es id: {msg}")
+                self.server_id = msg
 
     def change_server(self):
         while self.server:
-            sleep(30)
+            sleep(10)
+            # sleep(30)
             if self.number_clients > 0:
                 user = random.choice(list(self.clients.values()))
                 self.server = False

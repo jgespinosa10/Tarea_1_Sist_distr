@@ -19,6 +19,7 @@ class Client:
         self.SERVER_HOST = SERVER_HOST
         self.SERVER_PORT = SERVER_PORT
         self.server_alive = True
+        self.original_server_alive = True
         self.server_started = False
         self.users = dict()
         self.id = None
@@ -108,7 +109,7 @@ class Client:
             msg = self.listen()
             if msg == "":
                 print("server shutting down")
-                self.server_alive = False
+                self.original_server_alive = False
                 break
             self.server_started = True
             id, msg = process_message(msg)
@@ -130,6 +131,8 @@ class Client:
             elif id == "server":
                 self.become_server(msg)
                 # falta la recepción del estado del proceso
+            elif id == "new_server":
+                self.server_id = msg
 
     def become_server(self, msg):
         info = json.loads(msg)
@@ -142,7 +145,8 @@ class Client:
 
     def change_server(self):
         while self.is_server:
-            sleep(30)
+            sleep(10)
+            # sleep(30)
             if self.server.number_clients > 0:
                 user = random.choice(list(self.users))
                 self.is_server = False
