@@ -103,7 +103,7 @@ class Server:
                 id, msg = "k", ""
             else:
                 id, msg = process_message(msg)
-            if id == "0" and self.server_id is None:
+            if id == "0":
                 print("en colando")
                 self.msg_queue.put("0-" + msg)
             elif id == "k":
