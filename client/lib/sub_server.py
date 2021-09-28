@@ -22,7 +22,8 @@ class SubServer:
         self.queue_thread.daemon = True
 
         self.broadcast("new_server-" + str(self.client.id))
-        self.inform_server("new_server-" + str(self.client.id))
+        if self.client.original_server_alive:
+            self.inform_server("new_server-" + str(self.client.id))
 
         self.queue_thread.start()
 
