@@ -78,7 +78,7 @@ class Client:
             except KeyboardInterrupt:
                 # Revisa si el actual cliente es servidor en este momento
                 if self.is_server:
-                    self.change_server(wait=False)
+                    self.change_server(closing=True)
                 # Cerrar socket
                 print("cerrando...")
                 self.send("k-dead")
@@ -147,16 +147,19 @@ class Client:
         self.timer.daemon = True
         self.timer.start()
 
-    def change_server(self, wait = True):
+    def change_server(self, closing = False):
         while self.is_server:
-            if wait: sleep(10)
+            if not closing: sleep(10)
             # sleep(30)
             if self.server.number_clients > 0:
                 try:
                     user = random.choice(list(self.users))
                 except IndexError:
                     print("no hay nadie mas conectado")
-                    continue
+                    if closing:
+                        break
+                    else:
+                        continue
                 self.is_server = False
 
                 info = {}
