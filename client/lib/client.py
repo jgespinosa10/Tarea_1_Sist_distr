@@ -148,7 +148,11 @@ class Client:
             sleep(10)
             # sleep(30)
             if self.server.number_clients > 0:
-                user = random.choice(list(self.users))
+                try:
+                    user = random.choice(list(self.users))
+                except IndexError:
+                    print("no hay nadie mas conectado")
+                    continue
                 self.is_server = False
 
                 info = {}
