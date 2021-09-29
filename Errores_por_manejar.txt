@@ -1,2 +1,0 @@
-Errores que no se han manejado todavía:
-    - Que ocurre si es el servidor (que es un cliente) el que apaga la conexión.
