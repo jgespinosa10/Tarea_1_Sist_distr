@@ -76,6 +76,10 @@ class Client:
                 process_chat_commands(self, msg)
 
             except KeyboardInterrupt:
+                # Revisa si el actual cliente es servidor en este momento
+                if self.is_server:
+                    self.change_server(wait=False)
+                # Cerrar socket
                 print("cerrando...")
                 self.send("k-dead")
 
@@ -143,9 +147,9 @@ class Client:
         self.timer.daemon = True
         self.timer.start()
 
-    def change_server(self):
+    def change_server(self, wait = True):
         while self.is_server:
-            sleep(10)
+            if wait: sleep(10)
             # sleep(30)
             if self.server.number_clients > 0:
                 try:
