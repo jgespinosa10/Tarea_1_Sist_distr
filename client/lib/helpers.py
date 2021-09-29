@@ -23,10 +23,12 @@ def process_input(msg):
 def prepare_message(user, msg, private=False):
     date_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     metadata = f"[{date_now}] {user.name}"
+    mid = 0
     if private:
         metadata += " (private)"
+        mid = "p"
     metadata += ": "
-    msg = f"0-{user.color}{metadata}{msg}{Fore.RESET}"
+    msg = f"{mid}-{user.color}{metadata}{msg}{Fore.RESET}"
     return msg
 
 
