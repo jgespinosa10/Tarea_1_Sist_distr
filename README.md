@@ -1,8 +1,9 @@
 # Chat
 
-Aplicación que permite hacer un chat en formato LAN utilizando URL y puertos. Esta tiene una arquitectura basada en cliente-servidor para la comunicación comun entre muchos clientes y tiene una arquitectura P2P para la comunicación privada entre dos clientes. 
+Aplicación que permite hacer un chat en formato LAN utilizando URL y puertos. Esta tiene una arquitectura basada en cliente-servidor para la comunicación comun entre muchos clientes y tiene una arquitectura P2P para la comunicación privada entre dos clientes.
 
 # Documentación 🎨
+
 - [Chat](#chat)
   - [Instalación](#instalación)
     - [Dependencias](#dependencias)
@@ -14,10 +15,11 @@ Aplicación que permite hacer un chat en formato LAN utilizando URL y puertos. E
 ## Instalación
 
 ### Dependencias
+
 La aplicación corre en Python v.3.6.x y tiene las siguientes dependencias:
 
   Built-in:
-  - `sockets`: Utilizada para la comunicación entre aplicaciones, se utiliza el protocolo TCP.  
+  - `sockets`: Utilizada para la comunicación entre aplicaciones, se utiliza el protocolo TCP.
   - `json`: Para comunicas objetos JSON entre clientes y servidor.  
   - `datetime`: Generar timestamps dentro de los mensaje.  
   - `threading`: Para poder paralelizar la ejecución tanto del servidor como del cliente.  

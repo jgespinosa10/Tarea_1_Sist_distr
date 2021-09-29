@@ -138,7 +138,7 @@ class Client:
         info = json.loads(msg)
         self.server = SubServer(info, self.users, self.p2p, self)
         self.is_server = True
-        print("voy a ser server!!")
+        # print("voy a ser server!!")
         self.timer = Thread(target=self.change_server)
         self.timer.daemon = True
         self.timer.start()
@@ -161,4 +161,4 @@ class Client:
                 info['enough_clients'] = self.server.enough_clients
 
                 self.p2p.pm(user, "server-" + json.dumps(info))
-                print(f"cambiando de server a {self.users[user]['name']}")
+                # print(f"cambiando de server a {self.users[user]['name']}")

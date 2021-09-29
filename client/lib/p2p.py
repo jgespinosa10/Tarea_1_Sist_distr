@@ -30,7 +30,7 @@ class P2P:
             self.send(skt, 'ping')
 
     def peer(self, id):
-        return self.user.users[id]
+        return self.user.users.get(id, None)
 
     def send(self, skt, msg):
         write = skt.makefile('w')
@@ -71,12 +71,14 @@ class P2P:
 
     def pm(self, id, msg):
         skt = socket.socket()
-        skt.connect(process_ip(self.peer(id)['ip']))
-        self.peer(id)['socket'] = skt
+        peer = self.peer(id)
+        if not peer: return
+        skt.connect(process_ip(peer['ip']))
+        peer['socket'] = skt
 
         self.send(skt, str(self.user.id))
         self.listen(skt)
-        self.send(self.peer(id)['socket'], msg)
+        self.send(peer['socket'], msg)
 
     def die(self):
         for id, info in self.user.users.items():
