@@ -135,7 +135,6 @@ class Client:
                 print(msg)
             elif id == "server":
                 self.become_server(msg)
-                # falta la recepción del estado del proceso
             elif id == "new_server":
                 self.server_id = msg
 
@@ -143,15 +142,14 @@ class Client:
         info = json.loads(msg)
         self.server = SubServer(info, self.users, self.p2p, self)
         self.is_server = True
-        # print("voy a ser server!!")
         self.timer = Thread(target=self.change_server)
         self.timer.daemon = True
         self.timer.start()
 
     def change_server(self, closing = False):
         while self.is_server:
-            if not closing: sleep(10)
-            # sleep(30)
+            if not closing: sleep(30)
+
             if self.server.number_clients > 0:
                 try:
                     user = random.choice(list(self.users))
@@ -175,4 +173,3 @@ class Client:
                 self.p2p.pm(user, "server-" + json.dumps(info))
 
                 del self.server
-                # print(f"cambiando de server a {self.users[user]['name']}")
