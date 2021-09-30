@@ -11,6 +11,9 @@ Aplicación que permite hacer un chat en formato LAN utilizando URL y puertos. E
   - [Ejecución](#ejecución)
     - [Servidor](#servidor)
     - [Cliente](#cliente)
+  - [Comandos](#comandos)
+  - [Migraciones de procesos](#migraciones)
+    - [Consideraciones](#consideraciones)
 
 ## Instalación
 
@@ -76,6 +79,10 @@ donde N es la cantidad de clientes que se deben conectar para poder mostrar los 
 
 **La primera vez corriendo el servidor, se va a descargar `ngrok`.**
 
+### Comandos
+
+En el chat puedes escribir el comando /help para ver todos los comandos disponibles.
+
 ### Cliente
 
 Abrimos la terminal en la raiz del repositorio y ejectamos lo siguiente:
@@ -85,4 +92,18 @@ cd client
 python3 ./main.py
 ```
 
-Si es que no se automatizó el ingreso de la URL y el puerto se pedirán estas al iniciar el cliente
+Si es que no se automatizó el ingreso de la URL y el puerto se pedirán estas al iniciar el cliente.
+
+## Migraciones de Procesos
+
+Cada 30 segundos el servidor intenta migrar hacia un cliente. Si es que hay algún cliente conectado, entonces se inicia un proceso de cambio migración de proceso, en donde se informa en un JSON todo el estado actual del chat. Todo esta información se guarda en un objeto `SubServer` que se encarga de toda la lógica del servidor. Cada 30 segundos, el cliente intenta migrar hacia otro cliente. Si es que hay más clientes, se elige uno aleatoriamente, y se hace el mismo proceso de migración. El cliente que dejó de actuar de servidor elimina el objeto `SubServer`, deshaciéndose de todas las referencias de estado de proceso.
+
+### Consideraciones
+
+Para que nuevos clientes puedan ingresar al chat aún cuando no conocen el cliente que es servidor, estos clientes se intentan conectar al servidor original, y éste los redirige a quien es el servidor actual para que se maneje el ingreso del cliente.
+
+Ésto implica que se debe mantiene la referencia de quien es el servidor actual en el servidor original, por lo que para cada migración de procesos además se le informa al servidor original quién es el nuevo servidor.
+
+Si el servidor original se desconecta, entonces ya no se permite la entrada de nuevos usuarios.
+
+Cuando un cliente-servidor se intenta de desconectar con Ctrl-c, se fuerza la migración de servidor (si es que hay más clientes), aún si no pasaron los 30 segundos.
