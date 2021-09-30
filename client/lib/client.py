@@ -81,6 +81,7 @@ class Client:
                     self.change_server(closing=True)
                 # Cerrar socket
                 print("cerrando...")
+                sleep(0.1)
                 self.send("k-dead")
 
                 self.p2p.die()
@@ -172,4 +173,6 @@ class Client:
                 info['enough_clients'] = self.server.enough_clients
 
                 self.p2p.pm(user, "server-" + json.dumps(info))
+
+                del self.server
                 # print(f"cambiando de server a {self.users[user]['name']}")
