@@ -81,6 +81,6 @@ class P2P:
         self.send(peer['socket'], msg)
 
     def die(self):
-        for id, info in self.user.users.items():
+        for _, info in self.user.users.items():
             if 'socket' in info:
                 info['socket'].close()

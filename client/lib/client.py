@@ -2,10 +2,11 @@
 # Peer to peer from http://cs.berry.edu/~nhamid/p2p/framework-python.html
 
 import socket
-from datetime import datetime
 from threading import Thread
-from colorama import Fore
-from lib.helpers import process_input, prepare_message, process_message, print_users, process_input_with_commands, process_chat_commands
+from lib.helpers import (
+    process_message,
+    process_chat_commands
+)
 from lib.helpers import COLORS
 from lib.p2p import P2P
 from lib.sub_server import SubServer
