@@ -1,3 +1,4 @@
+import json
 from queue import Queue
 from threading import Thread, Lock
 from time import sleep
@@ -24,7 +25,7 @@ class SubServer:
         self.select_server()
 
         if self.client.original_server_alive:
-            self.inform_server("new_server-" + str(self.client.id))
+            self.inform_server({"id": "new_server", "client_id": self.client.id})
 
         self.queue_thread.start()
 
@@ -60,6 +61,7 @@ class SubServer:
 
     def inform_server(self, msg):
         # informa al servidor original que es el servidor actual
+        msg = json.dumps(msg)
         self.client.write = self.client.cs.makefile('w')
         with self.client.write:
             self.client.write.write(msg + '\n')

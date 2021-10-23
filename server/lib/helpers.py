@@ -12,13 +12,6 @@ def process_args():
             n_arg = True
     return n_clients, n_arg
 
-
-def process_message(msg):
-    msg = msg.split("-")
-    id = msg[0]
-    msg = ":".join(msg[1:])
-    return id, msg
-
 # Calcula la distancia entre 2 IPs, donde primero se revisa la IP y si es 0, entonces se revisa el puerto
 def ip_distance(ipPort1: str, ipPort2: str) -> int:
 

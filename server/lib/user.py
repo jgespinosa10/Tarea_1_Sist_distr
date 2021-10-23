@@ -1,3 +1,4 @@
+import json
 from threading import Lock
 
 
@@ -17,18 +18,22 @@ class User:
     def text(self) -> str:
         return f"{self.id}. {self.name}"
 
-    def send(self, msg):
+    def send(self, msg: dict) -> None:
+        msg = json.dumps(msg)
         with self.lock:
             self.write = self.cs.makefile('w')
             with self.write:
                 self.write.write(msg + '\n')
                 self.write.flush()
 
-    def listen(self):
+    def listen(self) -> dict:
         self.read = self.cs.makefile('r')
         with self.read:
             msg = self.read.readline().strip()
-        return msg
+        print("el mensaje es", msg)
+        if msg == "":
+            return ""
+        return json.loads(msg)
 
     def to_json(self):
         return {"id": self.id, "name": self.name, "ip": self.ip}

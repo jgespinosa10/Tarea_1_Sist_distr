@@ -4,7 +4,6 @@
 import socket
 from threading import Thread
 from lib.helpers import (
-    process_message,
     process_chat_commands,
     proccess_server_ip,
 )
@@ -41,7 +40,9 @@ class Client:
         self.client_hostname = self.cs.getsockname()[0]
 
         # prompt the client for a name
-        self.name = input("Enter your name: ")
+        # self.name = input("Enter your name: ")
+        self.name = "pepe"
+
         print(f"Hola {self.name}, bienvenid@ al chat!")
         print(
             "Escribe un mensaje y presiona Enter para enviar. Utiliza el comando /help para",
@@ -53,17 +54,17 @@ class Client:
         self.port = self.p2p.port
 
         # inform the server our ip, port and name
-        self.send(f"{self.client_hostname}-{self.port}-{self.name}")
+        self.send({"id": "init", "hostname": f"{self.client_hostname}-{self.port}", "name": self.name})
 
         # Entregamos la lista de usuarios actuales al cliente y quitamos su valor en el dict
         self.users = json.loads(self.listen())
-        self.send('ping')
+        self.send({"id": 'ping'})
         self.id = self.users['self']
         del self.users['self']
 
         # Entregamos la IP y el puerto del servidor inicial
         self.server_stats = self.listen()
-        self.send('ping')
+        self.send({"id": 'ping'})
 
         # make a thread that listens for messages to this client & print them
         t = Thread(target=self.listen_loop)
@@ -89,13 +90,14 @@ class Client:
                 # Cerrar socket
                 print("cerrando...")
                 sleep(0.1)
-                self.send("k-dead")
+                self.send({"id": "k", "msg": "dead"})
 
                 self.p2p.die()
 
                 raise KeyboardInterrupt
 
     def send(self, msg):
+        msg = json.dumps(msg)
         if self.server_id is None and not self.is_server:
             try:
                 self.write = self.cs.makefile('w')
@@ -114,7 +116,7 @@ class Client:
         self.read = self.cs.makefile('r')
         with self.read:
             msg = self.read.readline().strip()
-        return msg
+        return json.loads(msg)
 
     def listen_loop(self):
         while self.server_alive:
@@ -124,25 +126,22 @@ class Client:
                 self.original_server_alive = False
                 break
             self.server_started = True
-            id, msg = process_message(msg)
+            id = msg["id"]
 
             if id == "0":
-                print(msg)
+                print(f"{msg['msg']}")
             elif id == "1":
-                user = msg.split(";")
-                if int(self.id) != int(user[0]):
-                    self.users[user[0]] = {'id': user[0],
-                                           'name': user[2], 'ip': user[1]}
-                print(f"¡{user[0]}: {user[2]} ha entrado a la sala!\n")
+                if int(self.id) != int(msg["user_id"]):
+                    self.users[str(msg["user_id"])] = {'id': msg["user_id"],
+                                           'name': msg["user_name"], 'ip': msg["user_ip"]}
+                print(f"¡{msg['user_id']}: {msg['user_name']} ha entrado a la sala!\n")
             elif id == "k":
-                msg = msg.split('-')
-                id = msg[0]
-                msg = "-".join(msg[1:])
-                del self.users[id]
-                print(msg)
+                del self.users[msg["user_id"]]
+                print(f"{msg['user_name']} ha salido del chat")
             elif id == "server":
-                self.become_server(msg)
+                self.become_server(msg["msg"])
             elif id == "new_server":
+                print(msg)
                 self.server_id = msg
                 # Le avisamos al nuevo servidor que yo soy cliente suyo
             elif id == "original_server":

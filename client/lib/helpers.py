@@ -23,21 +23,13 @@ def process_input(msg):
 def prepare_message(user, msg, private=False):
     date_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     metadata = f"[{date_now}] {user.name}"
-    mid = 0
+    mid = "0"
     if private:
         metadata += " (private)"
         mid = "p"
     metadata += ": "
-    msg = f"{mid}-{user.color}{metadata}{msg}{Fore.RESET}"
-    return msg
-
-
-def process_message(msg):
-    msg = msg.split("-")
-    id = msg[0]
-    msg = "-".join(msg[1:])
-    return id, msg
-
+    msg_out = {"id": mid, "msg": f"{user.color}{metadata}{msg}{Fore.RESET}"}
+    return msg_out
 
 def print_users(client):
     text = "Usuarios conectados:\n"
@@ -82,6 +74,7 @@ def process_chat_commands(client, msg_input):
 
     # Caso users: imprime los usuarios
     elif command == "/users":
+        print(client.users)
         print(print_users(client))
 
     # Caso to: envía un mensaje privado
@@ -93,13 +86,17 @@ def process_chat_commands(client, msg_input):
         # Split separa el id del destinatario y el mensaje
         msg_split = msg.split(" ", maxsplit=1)
 
+        print(len(msg_split) == 2 and msg_split[0] in client.users)
+        print(client.users)
+        print(msg_split[0] in client.users)
+        print(len(msg_split) == 2)
+
         if len(msg_split) == 2 and msg_split[0] in client.users:
             uid = msg_split[0]
-            msg = msg_split[1]
-
-            msg = prepare_message(client, msg, private=True)
-            print(msg[2:])
-            client.p2p.pm(uid, msg)
+            msg_2 = msg_split[1]
+            
+            msg_3 = prepare_message(client, msg_2, private=True)
+            client.p2p.pm(uid, msg_3)
         else:
             print("Opción no válida")
 
