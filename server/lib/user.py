@@ -30,7 +30,6 @@ class User:
         self.read = self.cs.makefile('r')
         with self.read:
             msg = self.read.readline().strip()
-        print("el mensaje es", msg)
         if msg == "":
             return ""
         return json.loads(msg)

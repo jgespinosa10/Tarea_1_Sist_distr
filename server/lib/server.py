@@ -36,6 +36,10 @@ class Server:
         # self.timer.daemon = True
 
     def run(self):
+        '''
+        Función que corre al comenzar el thread, está encargada de 
+        recibir a todos los clientes que deseen conectarse
+        '''
         self.s.listen()
         print(f"[*] Listening as {self.SERVER_HOST}:{self.SERVER_PORT}")
 

@@ -72,18 +72,17 @@ class P2P:
         skt.close()
         return
 
-    def pm(self, id, old_msg):
-        msg = old_msg["msg"]
+    def pm(self, id, msg):
         skt = socket.socket()
         peer = self.peer(id)
         if not peer: return
         skt.connect(process_ip(peer['ip']))
         peer['socket'] = skt
-        print(old_msg["msg"])
+        print(msg["msg"])
 
         self.send(skt, str(self.user.id))
         self.listen(skt)
-        self.send(peer['socket'], json.dumps(old_msg))
+        self.send(peer['socket'], json.dumps(msg))
 
     def die(self):
         for _, info in self.user.users.items():

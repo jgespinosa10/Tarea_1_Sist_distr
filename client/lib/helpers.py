@@ -85,12 +85,7 @@ def process_chat_commands(client, msg_input):
 
         # Split separa el id del destinatario y el mensaje
         msg_split = msg.split(" ", maxsplit=1)
-
-        print(len(msg_split) == 2 and msg_split[0] in client.users)
-        print(client.users)
-        print(msg_split[0] in client.users)
-        print(len(msg_split) == 2)
-
+        
         if len(msg_split) == 2 and msg_split[0] in client.users:
             uid = msg_split[0]
             msg_2 = msg_split[1]
