@@ -5,7 +5,8 @@ import socket
 from threading import Thread
 from lib.helpers import (
     process_message,
-    process_chat_commands
+    process_chat_commands,
+    proccess_server_ip,
 )
 from lib.helpers import COLORS
 from lib.p2p import P2P
@@ -26,8 +27,8 @@ class Client:
         self.id = None
         self.is_server = False
         self.server_id = None
-
         self.color = random.choice(COLORS)
+        self.name = None
 
         # Connect to server and send information
         # initialize TCP socket
@@ -54,10 +55,15 @@ class Client:
         # inform the server our ip, port and name
         self.send(f"{self.client_hostname}-{self.port}-{self.name}")
 
+        # Entregamos la lista de usuarios actuales al cliente y quitamos su valor en el dict
         self.users = json.loads(self.listen())
         self.send('ping')
         self.id = self.users['self']
         del self.users['self']
+
+        # Entregamos la IP y el puerto del servidor inicial
+        self.server_stats = self.listen()
+        self.send('ping')
 
         # make a thread that listens for messages to this client & print them
         t = Thread(target=self.listen_loop)
@@ -138,6 +144,11 @@ class Client:
                 self.become_server(msg)
             elif id == "new_server":
                 self.server_id = msg
+                # Le avisamos al nuevo servidor que yo soy cliente suyo
+            elif id == "original_server":
+                self.server_id = None
+            elif id == "server_ip":
+                proccess_server_ip(msg)
 
     def become_server(self, msg):
         info = json.loads(msg)
@@ -149,7 +160,7 @@ class Client:
 
     def change_server(self, closing = False):
         while self.is_server:
-            if not closing: sleep(30)
+            if not closing: sleep(10)
 
             if self.server.number_clients > 0:
                 try:

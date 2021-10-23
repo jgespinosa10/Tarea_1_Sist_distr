@@ -1,7 +1,7 @@
 from queue import Queue
 from threading import Thread, Lock
 from time import sleep
-
+from lib.helpers import ip_distance
 
 class SubServer:
     def __init__(self, info, users, p2p, client):
@@ -21,12 +21,39 @@ class SubServer:
         self.queue_thread = Thread(target=self.send_messages)
         self.queue_thread.daemon = True
 
-        self.broadcast("new_server-" + str(self.client.id))
+        self.select_server()
+
         if self.client.original_server_alive:
             self.inform_server("new_server-" + str(self.client.id))
 
         self.queue_thread.start()
 
+    def select_server(self):
+        # Le decimos a todos los clientes que servidor deben elegir basandose en la distancia
+        for id, user in self.users.items():
+            # Esto es si es que el servidor inicial se cae se escoge si o si al client server
+            if not self.client.original_server_alive:
+                self.p2p.pm(id, "new_server-" + str(self.client.id))
+            # Aqui se elige el servidor basandose en la distancia del cliente a ese servidor
+            else:
+                # Direcciones de los 3 puntos a revisar
+                client_server_address = f"{self.client.client_hostname}-{self.client.port}"
+                server_address = self.client.server_stats
+                user_address = user["ip"] 
+                # Calculamos distancias
+                user_client_distance = ip_distance(client_server_address, user_address)
+                user_server_distance = ip_distance(server_address, user_address)
+                # revisamos que servidor tiene menor distancia al cliente
+                # Servidor cliente
+                if user_client_distance < user_server_distance:
+                    print("redirigido al servidor cliente")
+                    self.p2p.pm(id, "new_server-" + str(self.client.id))
+                # Servidor inicial
+                else:
+                    print("redirigido al servidor inicial")
+                    self.p2p.pm(id, "original_server-None")
+
+    # Mensaje general a todos los clientes
     def broadcast(self, msg):
         for id, user in self.users.items():
             self.p2p.pm(id, msg)

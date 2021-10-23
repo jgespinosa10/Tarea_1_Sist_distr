@@ -2,14 +2,15 @@ from threading import Lock
 
 
 class User:
-    def __init__(self, id, cs, name):
+    def __init__(self, id, cs, name=None, ip=None):
         # id del cliente
         self.id = id
         # socket y archivos de comunicacion asociado al cliente
         self.cs = cs
         # nombre del cliente
         self.name = name
-        self.ip = None
+        # ip-port del cliente
+        self.ip = ip
         self.lock = Lock()
 
     # función que retorna la concatenación del id con el nombre del cliente

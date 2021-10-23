@@ -2,6 +2,7 @@ from threading import Thread
 from lib.helpers import process_ip, process_message
 from colorama import Fore
 import socket
+import json
 
 
 class P2P:
@@ -53,7 +54,6 @@ class P2P:
             id, msg = process_message(msg)
             if id == "new_server":
                 self.user.server_id = msg
-                # print("cambiando de server!")
             elif id == "server":
                 self.user.become_server(msg)
             elif id == "0" and self.user.is_server:
