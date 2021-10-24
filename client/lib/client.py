@@ -5,7 +5,6 @@ import socket
 from threading import Thread
 from lib.helpers import (
     process_chat_commands,
-    proccess_server_ip,
 )
 from lib.helpers import COLORS
 from lib.p2p import P2P
@@ -76,7 +75,7 @@ class Client:
         while True:
             try:
                 msg = input()
-                print ('\033[1A\033[K', end="") # con esto eliminamos el input escrito y colocamos el mensaje ahí
+                # print ('\033[1A\033[K', end="") # con esto eliminamos el input escrito y colocamos el mensaje ahí
 
                 if not self.server_alive:
                     break
@@ -98,8 +97,8 @@ class Client:
                 raise KeyboardInterrupt
 
     def send(self, msg):
-        msg = json.dumps(msg)
         if self.server_id is None and not self.is_server:
+            msg = json.dumps(msg)
             try:
                 self.write = self.cs.makefile('w')
                 with self.write:
@@ -108,7 +107,7 @@ class Client:
             except BrokenPipeError:
                 self.server_alive = False
         elif self.is_server:
-            print(msg[2:])
+            print(msg["msg"])
             self.server.msg_queue.put(msg)
         else:
             self.p2p.pm(self.server_id, msg)
@@ -140,23 +139,20 @@ class Client:
                 del self.users[msg["user_id"]]
                 print(f"{msg['user_name']} ha salido del chat")
             elif id == "server":
-                self.become_server(msg["msg"])
+                self.become_server(msg["info"])
             elif id == "new_server":
-                print(msg)
-                self.server_id = msg
+                self.server_id = msg["client_id"]
                 # Le avisamos al nuevo servidor que yo soy cliente suyo
             elif id == "original_server":
                 self.server_id = None
-            elif id == "server_ip":
-                proccess_server_ip(msg)
 
-    def become_server(self, msg):
-        info = json.loads(msg)
+    def become_server(self, info):
+        info = json.loads(info)
         self.server = SubServer(info, self.users, self.p2p, self)
         self.is_server = True
-        self.timer = Thread(target=self.change_server)
-        self.timer.daemon = True
-        self.timer.start()
+        # self.timer = Thread(target=self.change_server)
+        # self.timer.daemon = True
+        # self.timer.start()
 
     def change_server(self, closing = False):
         while self.is_server:
@@ -182,6 +178,6 @@ class Client:
                 info['user_id'] = self.server.user_id
                 info['enough_clients'] = self.server.enough_clients
 
-                self.p2p.pm(user, "server-" + json.dumps(info))
+                self.p2p.pm(user, {"id": "server", "info": json.dumps(info)})
 
                 del self.server

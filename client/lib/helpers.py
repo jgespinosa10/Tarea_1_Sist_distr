@@ -124,6 +124,3 @@ def ip_distance(ipPort1: str, ipPort2: str) -> int:
 
     return distance
     
-def proccess_server_ip(ip: str) -> tuple:
-    ip_address, port = ip.split("-")
-    return (ip_address, port)

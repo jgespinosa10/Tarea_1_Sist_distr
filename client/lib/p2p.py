@@ -28,7 +28,7 @@ class P2P:
             t.deamon = True
             t.start()
 
-            self.send(skt, 'ping')
+            self.send(skt, {"id": 'ping'})
 
     def peer(self, id):
         return self.user.users.get(id, None)
@@ -49,16 +49,15 @@ class P2P:
     def listen_loop(self, skt):
         try:
             msg = self.listen(skt)
-            msg = json.loads(msg)
             if msg == "":
                 skt.close()
                 return
 
             id = msg["id"]
             if id == "new_server":
-                self.user.server_id = msg["msg"]
+                self.user.server_id = msg["client_id"]
             elif id == "server":
-                self.user.become_server(msg["msg"])
+                self.user.become_server(msg["info"])
             elif id == "0" and self.user.is_server:
                 print(msg["msg"])
                 self.user.server.msg_queue.put({"id": id, "msg": msg["msg"]})
@@ -78,11 +77,12 @@ class P2P:
         if not peer: return
         skt.connect(process_ip(peer['ip']))
         peer['socket'] = skt
-        print(msg["msg"])
+        if "msg" in msg.keys():
+            print(msg["msg"])
 
         self.send(skt, str(self.user.id))
         self.listen(skt)
-        self.send(peer['socket'], json.dumps(msg))
+        self.send(peer['socket'], msg)
 
     def die(self):
         for _, info in self.user.users.items():

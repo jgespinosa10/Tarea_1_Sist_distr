@@ -32,8 +32,8 @@ class Server:
         self.queue_thread = Thread(target=self.send_messages)
         self.queue_thread.daemon = True
 
-        # self.timer = Thread(target=self.add_server)
-        # self.timer.daemon = True
+        self.timer = Thread(target=self.add_server)
+        self.timer.daemon = True
 
     def run(self):
         '''
@@ -44,7 +44,7 @@ class Server:
         print(f"[*] Listening as {self.SERVER_HOST}:{self.SERVER_PORT}")
 
         self.queue_thread.start()
-        # self.timer.start()
+        self.timer.start()
 
         while True:
             client_socket, _ = self.s.accept()
@@ -60,7 +60,6 @@ class Server:
             # if queue has msgs, remove first msg in queue and send it to all clients
             if not self.msg_queue.empty() and self.enough_clients:
                 msg = self.msg_queue.get()
-                print(msg)
                 with self.clients_lock:
                     for id, user in self.clients.items():
                         user.send(msg)
@@ -95,7 +94,7 @@ class Server:
         user.listen()
 
         with self.clients_lock:
-            self.clients[int(user.id)] = user
+            self.clients[user.id] = user
         # update the minimum of clients condition
         self.number_clients += 1
         if self.n_arg and self.number_clients >= self.required_clients:
@@ -115,7 +114,7 @@ class Server:
             # Servidor cliente
             if user_client_distance < user_server_distance:
                 print(f"{user.name} redirigido al servidor cliente")
-                user.send({"id": "new_server", "msg": str(self.server_id)})
+                user.send({"id": "new_server", "client_id": str(self.server_id)})
             else:
                 print(f"{user.name} se queda en el servidor actual")
 
@@ -138,10 +137,9 @@ class Server:
                 # k significa que se ha salido una persona
                 elif id == "k":
                     with self.clients_lock:
-                        del self.clients[int(user.id)]
+                        del self.clients[user.id]
                         self.msg_queue.put({"id": "k", "user_id": user.id, "user_name": user.name})
                         self.number_clients -= 1
-                        print(self.clients)
                         break
                 # new_server significa que un nuevo cliente es servidor
                 elif id == "new_server":
@@ -158,7 +156,7 @@ class Server:
         es montado en algun cliente
         '''
         while True:
-            sleep(10)
+            sleep(5)
 
             if self.number_clients > 0:
                 user = random.choice(list(self.clients.values()))
@@ -172,8 +170,8 @@ class Server:
                 info['user_id'] = self.user_id
                 info['enough_clients'] = self.enough_clients
 
-                user.send({"id": "server", "msg": json.dumps(info)})
-                print(f"Se añade al cliente {user.name} como segundo servidor")
+                user.send({"id": "server", "info": json.dumps(info)})
+                print(f"Se añade al cliente {user.id} como segundo servidor")
                 break
 
     def select_server(self):
@@ -200,7 +198,7 @@ class Server:
             # Servidor cliente
             if user_client_distance < user_server_distance:
                 print(f"{user.name} redirigido al servidor cliente")
-                user.send({"id": "new_server", "msg": str(self.server_id)})
+                user.send({"id": "new_server", "client_id": str(self.server_id)})
                 # Eliminamos a este cliente de la lista
 
     def add_new_user(self, id=None, cs=None, name=None, ip=None):
