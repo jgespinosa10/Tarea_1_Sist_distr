@@ -21,7 +21,8 @@ def process_input(msg):
 
 
 def prepare_message(user, msg, private=False):
-    date_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    # date_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    date_now = datetime.now().strftime('%H:%M:%S')
     metadata = f"[{date_now}] {user.name}"
     mid = "0"
     if private:
@@ -74,7 +75,6 @@ def process_chat_commands(client, msg_input):
 
     # Caso users: imprime los usuarios
     elif command == "/users":
-        print(client.users)
         print(print_users(client))
 
     # Caso to: envía un mensaje privado
@@ -98,6 +98,9 @@ def process_chat_commands(client, msg_input):
     # Caso exit: sale del chat
     elif command == "/exit":
         raise KeyboardInterrupt
+
+    elif len(command):
+        print("Comando invalido, intenta usar /help para ver todos los comandos disponibles")
 
     # Caso default: Si no se ingresa un comando, se envia el mensaje original a todos
     elif msg_input.strip() != "":

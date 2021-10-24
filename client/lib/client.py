@@ -76,6 +76,7 @@ class Client:
         while True:
             try:
                 msg = input()
+                print ('\033[1A\033[K', end="") # con esto eliminamos el input escrito y colocamos el mensaje ahí
 
                 if not self.server_alive:
                     break
